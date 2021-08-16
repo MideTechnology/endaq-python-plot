@@ -72,7 +72,6 @@ def general_get_correlation_figure(merged_df, recording_colors=None, hover_names
     cols = [col for col, t in zip(merged_df.columns, merged_df.dtypes) if t != np.object]
 
     point_naming_characteristic = merged_df.index if hover_names is None else hover_names
-    print(point_naming_characteristic)
 
     # This is not necessary, but usually produces easily discernible correlations or groupings of files/devices.
     # The hope is that when the initial plot has these characteristics, it will encourage
