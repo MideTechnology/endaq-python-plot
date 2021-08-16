@@ -8,7 +8,7 @@ from plotly.subplots import make_subplots
 
 
 
-DEFAULT_ATTRIBUTES_TO_PLOT_INDUVIDUALLY = np.array([
+DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'accelerationPeakFull', 'accelerationRMSFull', 'velocityRMSFull', 'psuedoVelocityPeakFull',
     'displacementRMSFull', 'gpsSpeedFull', 'gyroscopeRMSFull', 'microphonoeRMSFull',
     'temperatureMeanFull', 'pressureMeanFull'])
@@ -17,7 +17,7 @@ DEFAULT_ATTRIBUTES_TO_PLOT_INDUVIDUALLY = np.array([
 
 
 
-def multi_file_plot_row(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_INDUVIDUALLY, recording_colors=None,
+def multi_file_plot_row(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY, recording_colors=None,
                         width_per_subplot=400):
     """
     Creates a Plotly figure plotting all the desired attributes from the given DataFrame.
