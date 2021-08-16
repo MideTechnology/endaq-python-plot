@@ -208,13 +208,9 @@ def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=T
     """
     if filter_points_by_positive_groud_speed:
         df_map = df_map[df_map["GNSS Speed: Ground Speed"] > 0]
-        
-    zoom, center = zoom_center(
-        lats=df_map["Location: Latitude"], lons=df_map["Location: Longitude"]
-    )
     
     zoom = determine_plotly_map_zoom(lats=df_map["Location: Latitude"], lons=df_map["Location: Longitude"])
-    center = get_center_of_coordinates(lats=df_map["Location: Latitude"], lons=df_map["Location: Longitude"]):
+    center = get_center_of_coordinates(lats=df_map["Location: Latitude"], lons=df_map["Location: Longitude"])
     
     px.set_mapbox_access_token(mapbox_access_token)
     
