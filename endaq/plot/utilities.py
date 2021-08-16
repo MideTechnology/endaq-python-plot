@@ -160,7 +160,7 @@ def determine_plotly_map_zoom(
             raise ValueError("Must pass lons & lats or lonlats")
             
     # longitudinal range by zoom level (20 to 1) in degrees, log scaled, with 360 as min zoom
-    lon_zoom_range = np.array([360 / 2 ** (19 - j) for j in range(20)], dtype=np.float32)
+    lon_zoom_range = np.array([360 / 2 ** j for j in range(20)[::-1]], dtype=np.float32)
 
     if projection == "mercator":
         maxlon, minlon = max(lons), min(lons)
