@@ -30,9 +30,9 @@ def multi_file_plot_row(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_I
     """
 
     assert isinstance(rows_to_plot, np.ndarray), \
-        "Instead of an ndarray given for 'rows_to_plot', a variable of type %s was give" % str(type(rows_to_plot))
+        "Instead of an ndarray given for 'rows_to_plot', a variable of type %s was given" % str(type(rows_to_plot))
     assert len(rows_to_plot) > 0, "At least one value must be given for 'rows_to_plot'"
-    assert all(isinstance(row, str) for row in rows_to_plot), "All rows to plot be given as a string!"
+    assert all(isinstance(row, str) for row in rows_to_plot), "All rows to plot must be given as a string!"
 
     should_plot_row = np.array([not multi_file_db[r].isnull().all() for r in rows_to_plot])
 
