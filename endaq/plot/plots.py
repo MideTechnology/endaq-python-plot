@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 
+from .utilities import determine_plotly_map_zoom, get_center_of_coordinates
 
 
 
@@ -189,3 +189,40 @@ def get_pure_numpy_2d_pca(df, recording_colors=None):
     )
 
     return fig
+
+
+
+
+def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=True, color_by_column="GNSS Speed: Ground Speed"):
+    """
+    Plots GPS data on a map from a single recording, shading the points based some characteristic
+    (defaults to ground speed).
+    
+    :param df_map: The pandas dataframe containing the recording data.
+    :param mapbox_access_token: The access token (or API key) needed to be able to plot against
+     a map.
+    :param filter_points_by_positive_groud_speed: A boolean variable, which will filter
+     which points are plotted by if they have corresponding positive ground speeds.  This helps
+     remove points which didn't actually have a GPS location found (was created by a bug in the hardware I believe).
+    :param color_by_column: The dataframe column title to color the plotted points by.
+    """
+    if filter_points_by_positive_groud_speed:
+        df_map = df_map[df_map["GNSS Speed: Ground Speed"] > 0]
+    
+    zoom = determine_plotly_map_zoom(lats=df_map["Location: Latitude"], lons=df_map["Location: Longitude"])
+    center = get_center_of_coordinates(lats=df_map["Location: Latitude"], lons=df_map["Location: Longitude"])
+    
+    px.set_mapbox_access_token(mapbox_access_token)
+    
+    fig = px.scatter_mapbox(
+        df_map,
+        lat="Location: Latitude",
+        lon="Location: Longitude",
+        color=color_by_column,
+        size_max=15,
+        zoom=zoom - 1,
+        center=center,
+    )
+
+    return fig
+    
