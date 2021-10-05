@@ -3,6 +3,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
+from scipy import signal
+
+from endaq.calc.psd import to_octave, welch
 
 from .utilities import determine_plotly_map_zoom, get_center_of_coordinates
 
@@ -226,3 +229,146 @@ def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=T
 
     return fig
     
+
+def octave_spectrogram(df, win, bins_per_octave=3, freq_start=20, max_freq=float('inf'), log_scale=True, log_scale_y_axis=True):
+    """
+    Produces an octave spectrogram of the given data.
+
+    :param df: The dataframe of sensor data
+    :param win: The time window for each of the columns in the spectrogram
+    :param bins_per_octave: The number of frequency bins per octave
+    :param freq_start: The center of the first frequency bin
+    :param max_freq: The maximum frequency to plot
+    :param log_scale: If the spectrogram should be log scaled for visibility (with 10*log10(x))
+    :param log_scale_y_axis: If the y-axis of the plot should be log scaled
+    """
+    ary = df.values.squeeze()
+
+    fs = len(df) / (df.index[-1] - df.index[0])
+    N = int(fs * win) #Number of points in the fft
+    w = signal.blackman(N, False)
+    
+    freqs, bins, Pxx = signal.spectrogram(ary, fs, window=w, nperseg=N, noverlap=0)
+
+    time_dfs = [pd.DataFrame({bins[j]: Pxx[:, j]}, index=freqs) for j in range(len(bins))]
+
+    octave_dfs = list(map(lambda x: to_octave(x, freq_start, octave_bins=bins_per_octave, agg='sum'), time_dfs))
+    
+    combined_df = pd.concat(octave_dfs, axis=1)
+    
+    freqs = combined_df.index.values
+    Pxx = combined_df.values
+    
+    include_freqs_mask = freqs <= max_freq
+    Pxx = Pxx[include_freqs_mask]
+    freqs = freqs[include_freqs_mask]
+
+    if log_scale:
+        Pxx = 10 * np.log10(Pxx)
+
+    trace = [go.Heatmap(x=bins, y=freqs, z=Pxx, colorscale='Jet')]
+    layout = go.Layout(
+        yaxis={'title': 'Frequency (Hz)'},
+        xaxis={'title': 'Time (s)'},
+    )
+
+    fig = go.Figure(data=trace, layout=layout)
+    
+    if log_scale_y_axis:
+        fig.update_yaxes(type="log")
+
+    fig.update_traces(showscale=False)
+
+    return freqs, bins, Pxx, fig
+    
+	
+def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_scale_y_axis=True):
+    """
+    Produces a bar plot of an octave psd.
+
+    :param df: The dataframe of sensor data
+    :param bins_per_octave: The number of frequency bins per octave
+    :param f_start: The center of the first frequency bin
+    :param yaxis_title: The text to label the y-axis
+    :param log_scale_y_axis: If the y-axis should be log scaled
+    """
+    psd_df = welch(df, 1, scaling='spectrum')
+
+    octave_psd_df = to_octave(
+        psd_df,
+        f_start, 
+        bins_per_octave,
+        agg='sum',
+    )
+
+    frequency_durations = np.diff(octave_psd_df.index)
+
+    bar = go.Bar(
+        x=octave_psd_df.index.values,
+        y=octave_psd_df.values.squeeze(),
+        width=frequency_durations,
+    )
+    layout = go.Layout(
+        yaxis={'title': yaxis_title},
+        xaxis={'title': 'Frequency (Hz)'},
+    )
+
+    fig = go.Figure(data=bar, layout=layout)
+
+    if log_scale_y_axis:
+        fig.update_xaxes(type="log")
+
+    return fig
+
+
+def rolling_window(a, window_size):
+    shape = (a.shape[0] - window_size + 1, window_size) + a.shape[1:]
+    strides = (a.strides[0],) + a.strides
+    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+
+
+def audio_dB_plot(df, density_of_air=1.204, speed_of_sound_medium=343, reference_intensity=1e-12, rolling_window_len=101, max_points_to_plot=1000):
+    """
+    Produces a Plotly Figure of decibels vs time from audio recorded by an enDAQ device.
+
+    :param df: The Dataframe of audio data
+    :param density_of_air: The density of the air in the location of the recording in kg/m^3.  Defaults
+     to the density of air at STP     
+    :param speed_of_sound_medium: The speed of sound in the air at the location of the recording, in m/s.
+    :param reference_intensity: The relative sound intensity level.  More information on this and how to estimate it
+     can be found here: https://courses.lumenlearning.com/physics/chapter/17-3-sound-intensity-and-sound-level/
+    :param rolling_window_len: The window size of the rolling maximum pressure difference window
+    :param max_points_to_plot: The maximum number of points to plot.  If the time series exceeds this number,
+     the data will be resampled to this number of points
+    """
+    rolling_ary = rolling_window(df.values.squeeze(), rolling_window_len)
+    
+    delta_p = (np.max(rolling_ary, axis=1) - np.min(rolling_ary, axis=1)) / 2
+
+    intensity = (delta_p) ** 2 / (2 * density_of_air * speed_of_sound_medium)
+
+    db = 10 * np.log10(intensity / reference_intensity)
+
+    times = df.index.values
+
+    # This is done since the rolling windowed operations reduces the number of samples
+    time_stamps_to_skip = (rolling_window_len - 1) // 2
+    times = times[time_stamps_to_skip: - time_stamps_to_skip]
+
+    if len(db) > max_points_to_plot:
+        resampled_db, times = signal.resample(db, max_points_to_plot, t=times)   
+    else:
+        resampled_db = db
+
+    
+    fig = px.line(
+        x=times,
+        y=resampled_db,
+    )
+
+    fig.update_layout(
+        xaxis_title="Time (s)",
+        yaxis_title="Decibels (dB)",
+    )
+
+    return fig
