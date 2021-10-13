@@ -17,9 +17,6 @@ DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'temperatureMeanFull', 'pressureMeanFull'])
 
 
-
-
-
 def multi_file_plot_row(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY, recording_colors=None,
                         width_per_subplot=400):
     """
@@ -194,8 +191,6 @@ def get_pure_numpy_2d_pca(df, recording_colors=None):
     return fig
 
 
-
-
 def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=True, color_by_column="GNSS Speed: Ground Speed"):
     """
     Plots GPS data on a map from a single recording, shading the points based some characteristic
@@ -249,7 +244,7 @@ def octave_spectrogram(df, win, bins_per_octave=3, freq_start=20, max_freq=float
     """
     ary = df.values.squeeze()
 
-    fs = len(df) / (df.index[-1] - df.index[0])
+    fs = (len(df) - 1) / (df.index[-1] - df.index[0])
     N = int(fs * win) #Number of points in the fft
     w = signal.blackman(N, False)
     
@@ -322,58 +317,5 @@ def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_s
 
     if log_scale_y_axis:
         fig.update_xaxes(type="log")
-
-    return fig
-
-
-def rolling_window(a, window_size):
-    shape = (a.shape[0] - window_size + 1, window_size) + a.shape[1:]
-    strides = (a.strides[0],) + a.strides
-    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
-
-
-def audio_dB_plot(df, density_of_air=1.204, speed_of_sound_medium=343, reference_intensity=1e-12, rolling_window_len=101, max_points_to_plot=1000):
-    """
-    Produces a Plotly Figure of decibels vs time from audio recorded by an enDAQ device.
-
-    :param df: The Dataframe of audio data
-    :param density_of_air: The density of the air in the location of the recording in kg/m^3.  Defaults
-     to the density of air at STP     
-    :param speed_of_sound_medium: The speed of sound in the air at the location of the recording, in m/s.
-    :param reference_intensity: The relative sound intensity level.  More information on this and how to estimate it
-     can be found here: https://courses.lumenlearning.com/physics/chapter/17-3-sound-intensity-and-sound-level/
-    :param rolling_window_len: The window size of the rolling maximum pressure difference window
-    :param max_points_to_plot: The maximum number of points to plot.  If the time series exceeds this number,
-     the data will be resampled to this number of points
-    """
-    rolling_ary = rolling_window(df.values.squeeze(), rolling_window_len)
-    
-    delta_p = (np.max(rolling_ary, axis=1) - np.min(rolling_ary, axis=1)) / 2
-
-    intensity = (delta_p) ** 2 / (2 * density_of_air * speed_of_sound_medium)
-
-    db = 10 * np.log10(intensity / reference_intensity)
-
-    times = df.index.values
-
-    # This is done since the rolling windowed operations reduces the number of samples
-    time_stamps_to_skip = (rolling_window_len - 1) // 2
-    times = times[time_stamps_to_skip: - time_stamps_to_skip]
-
-    if len(db) > max_points_to_plot:
-        resampled_db, times = signal.resample(db, max_points_to_plot, t=times)   
-    else:
-        resampled_db = db
-
-    
-    fig = px.line(
-        x=times,
-        y=resampled_db,
-    )
-
-    fig.update_layout(
-        xaxis_title="Time (s)",
-        yaxis_title="Decibels (dB)",
-    )
 
     return fig
