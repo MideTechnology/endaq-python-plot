@@ -230,7 +230,7 @@ def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=T
     return fig
     
 
-def octave_spectrogram(df, win, bins_per_octave=3, freq_start=20, max_freq=float('inf'), log_scale=True, log_scale_y_axis=True):
+def octave_spectrogram(df, win, bins_per_octave=3, freq_start=20, max_freq=float('inf'), db_scale=True, log_scale_y_axis=True):
     """
     Produces an octave spectrogram of the given data.
 
@@ -239,8 +239,13 @@ def octave_spectrogram(df, win, bins_per_octave=3, freq_start=20, max_freq=float
     :param bins_per_octave: The number of frequency bins per octave
     :param freq_start: The center of the first frequency bin
     :param max_freq: The maximum frequency to plot
-    :param log_scale: If the spectrogram should be log scaled for visibility (with 10*log10(x))
+    :param db_scale: If the spectrogram should be log scaled for visibility (with 10*log10(x))
     :param log_scale_y_axis: If the y-axis of the plot should be log scaled
+    :return: a tuple containing:
+     - the frequency bins
+     - the time bins
+     - the spectrogram data
+     - the corresponding plotly figure
     """
     ary = df.values.squeeze()
 
@@ -263,7 +268,7 @@ def octave_spectrogram(df, win, bins_per_octave=3, freq_start=20, max_freq=float
     Pxx = Pxx[include_freqs_mask]
     freqs = freqs[include_freqs_mask]
 
-    if log_scale:
+    if db_scale:
         Pxx = 10 * np.log10(Pxx)
 
     trace = [go.Heatmap(x=bins, y=freqs, z=Pxx, colorscale='Jet')]
