@@ -2,76 +2,126 @@ import plotly.io as pio
 import numpy as np
 
 
-def set_plot_appearances(graph_line_color='#323232', background_color='#0F0F0F', text_color='#DAD9D8',
-                         default_plotly_template='plotly_dark'):
+def define_theme(template_name="enDAQ_cloud",
+                 default_plotly_template='plotly_dark',
+                 text_color='#DAD9D8', font_family="Open Sans", title_font_family="Open Sans SemiBold",
+                 graph_line_color='#DAD9D8', grid_line_color="#404041", background_color='#0F0F0F',
+                 plot_background_color='#1c1c1c'):
+    """
+    Define a Plotly theme (template), allowing completely custom aesthetics
 
-    pio.templates["enDAQ"] = pio.templates[default_plotly_template]
+    :param template_name: The name for the Plotly template being created
+    :param default_plotly_template: The default Plotly Template (aspects of this will be used if
+     a characteristic isn't set elsewhere)
+    :param text_color: The color of the text
+    :param font_family: The font family to use for text (not including the title)
+    :param title_font_family: The font family to use for the title
+    :param graph_line_color: The line color used when plotting line plots
+    :param grid_line_color: The color of the grid lines on the plot
+    :param background_color: The background color of the figure
+    :param plot_background_color: The background color of the plot
+    :return: The plotly template which was just created
+    """
+    pio.templates[template_name] = pio.templates[default_plotly_template]
 
     # Line Colors
-    colorway = ['#EE7F27', '#6914F0', '#2DB473', '#D72D2D', '#3764FF', '#FAC85F']
+    colorway = ['#EE7F27', '#6914F0', '#2DB473', '#D72D2D', '#3764FF', '#FAC85F', '#27eec0', '#b42d4d', '#82d72d',
+                '#e35ffa']
     colorbar = [[0.0, '#6914F0'],
                 [0.2, '#3764FF'],
                 [0.4, '#2DB473'],
                 [0.6, '#FAC85F'],
                 [0.8, '#EE7F27'],
                 [1.0, '#D72D2D']]
-    pio.templates["enDAQ"]['layout']['colorway'] = colorway
-    pio.templates["enDAQ"]['layout']['colorscale']['sequential'] = colorbar
-    pio.templates["enDAQ"]['layout']['colorscale']['sequentialminus'] = colorbar
-    pio.templates["enDAQ"]['layout']['colorscale']['diverging'] = [[0.0, '#6914F0'],
-                                                                   [0.5, '#f7f7f7'],
-                                                                   [1.0, '#EE7F27']]
+    pio.templates[template_name]['layout']['colorway'] = colorway
+    pio.templates[template_name]['layout']['colorscale']['sequential'] = colorbar
+    pio.templates[template_name]['layout']['colorscale']['sequentialminus'] = colorbar
+    pio.templates[template_name]['layout']['colorscale']['diverging'] = [[0.0, '#6914F0'],
+                                                                         [0.5, '#f7f7f7'],
+                                                                         [1.0, '#EE7F27']]
     plot_types = ['contour', 'heatmap', 'heatmapgl', 'histogram2d', 'histogram2dcontour', 'surface']
     for p in plot_types:
-        pio.templates["enDAQ"]['data'][p][0].colorscale = colorbar
+        pio.templates[template_name]['data'][p][0].colorscale = colorbar
 
     # Text
     # dictionary = dict(font=dict(family="Open Sans", size=24, color=text_color))
-    # pio.templates["enDAQ"]['layout']['annotations'] = [(k, v) for k, v in dictionary.items()]
-    pio.templates["enDAQ"]['layout']['font'] = dict(family="Open Sans", size=16, color=text_color)
-    pio.templates["enDAQ"]['layout']['title_font'] = dict(family="Open Sans", size=24, color=text_color)
+    # pio.templates[template_name]['layout']['annotations'] = [(k, v) for k, v in dictionary.items()]
+    pio.templates[template_name]['layout']['font'] = dict(family=font_family, size=16, color=text_color)
+    pio.templates[template_name]['layout']['title_font_family'] = title_font_family
+    pio.templates[template_name]['layout']['title_font_size'] = 24
+    pio.templates[template_name]['layout']['title_x'] = 0.5
+    pio.templates[template_name]['layout']['yaxis_title_font_size'] = 20
+    pio.templates[template_name]['layout']['xaxis_title_font_size'] = 20
+
+    # Legend
+    pio.templates[template_name]['layout']['legend'] = dict(orientation='h', y=-0.2)
 
     # Background Color
-    pio.templates["enDAQ"]['layout']['paper_bgcolor'] = background_color
-    pio.templates["enDAQ"]['layout']['plot_bgcolor'] = background_color
-    pio.templates["enDAQ"]['layout']['geo']['bgcolor'] = background_color
-    pio.templates["enDAQ"]['layout']['polar']['bgcolor'] = background_color
-    pio.templates["enDAQ"]['layout']['ternary']['bgcolor'] = background_color
+    pio.templates[template_name]['layout']['paper_bgcolor'] = background_color
+    pio.templates[template_name]['layout']['plot_bgcolor'] = plot_background_color
+    pio.templates[template_name]['layout']['geo']['bgcolor'] = plot_background_color
+    pio.templates[template_name]['layout']['polar']['bgcolor'] = plot_background_color
+    pio.templates[template_name]['layout']['ternary']['bgcolor'] = plot_background_color
+    pio.templates[template_name]['layout']['scene']['xaxis']['backgroundcolor'] = plot_background_color
+    pio.templates[template_name]['layout']['scene']['yaxis']['backgroundcolor'] = plot_background_color
+    pio.templates[template_name]['layout']['scene']['zaxis']['backgroundcolor'] = plot_background_color
 
     # Graph Lines
-    pio.templates["enDAQ"]['data']['scatter'][0].marker.line.color = graph_line_color
-    pio.templates["enDAQ"]['layout']['scene']['xaxis']['gridcolor'] = graph_line_color
-    pio.templates["enDAQ"]['layout']['scene']['xaxis']['linecolor'] = graph_line_color
-    pio.templates["enDAQ"]['layout']['scene']['yaxis']['gridcolor'] = graph_line_color
-    pio.templates["enDAQ"]['layout']['scene']['yaxis']['linecolor'] = graph_line_color
-    pio.templates["enDAQ"]['layout']['scene']['zaxis']['gridcolor'] = graph_line_color
-    pio.templates["enDAQ"]['layout']['scene']['zaxis']['linecolor'] = graph_line_color
-    pio.templates["enDAQ"]['layout']['xaxis']['gridcolor'] = graph_line_color
-    pio.templates["enDAQ"]['layout']['xaxis']['linecolor'] = graph_line_color
-    pio.templates["enDAQ"]['layout']['yaxis']['gridcolor'] = graph_line_color
-    pio.templates["enDAQ"]['layout']['yaxis']['linecolor'] = graph_line_color
+    pio.templates[template_name]['data']['scatter'][0].marker.line.color = graph_line_color
+    pio.templates[template_name]['layout']['scene']['xaxis']['gridcolor'] = grid_line_color
+    pio.templates[template_name]['layout']['scene']['xaxis']['linecolor'] = graph_line_color
+    pio.templates[template_name]['layout']['scene']['yaxis']['gridcolor'] = grid_line_color
+    pio.templates[template_name]['layout']['scene']['yaxis']['linecolor'] = graph_line_color
+    pio.templates[template_name]['layout']['scene']['zaxis']['gridcolor'] = grid_line_color
+    pio.templates[template_name]['layout']['scene']['zaxis']['linecolor'] = graph_line_color
+    pio.templates[template_name]['layout']['xaxis']['gridcolor'] = grid_line_color
+    pio.templates[template_name]['layout']['xaxis']['linecolor'] = graph_line_color
+    pio.templates[template_name]['layout']['yaxis']['gridcolor'] = grid_line_color
+    pio.templates[template_name]['layout']['yaxis']['linecolor'] = graph_line_color
+    pio.templates[template_name]['layout']['yaxis']['zerolinecolor'] = graph_line_color
+    pio.templates[template_name]['layout']['xaxis']['zerolinecolor'] = graph_line_color
+    pio.templates[template_name]['layout']['yaxis']['zerolinewidth'] = 1
+    pio.templates[template_name]['layout']['xaxis']['zerolinewidth'] = 1
+    pio.templates[template_name]['layout']['yaxis']['showline'] = True
+    pio.templates[template_name]['layout']['xaxis']['showline'] = True
+    pio.templates[template_name]['layout']['yaxis']['showgrid'] = True
+    pio.templates[template_name]['layout']['xaxis']['showgrid'] = True
+    pio.templates[template_name]['layout']['yaxis']['mirror'] = True
+    pio.templates[template_name]['layout']['xaxis']['mirror'] = True
+    pio.templates[template_name]['layout']['yaxis']['zeroline'] = True
+    pio.templates[template_name]['layout']['xaxis']['zeroline'] = True
 
-    # Set Default
-    pio.templates.default = "enDAQ"
+    return pio.templates[template_name]
 
 
-def set_theme(theme='dark'):
+def set_theme(theme='enDAQ'):
     """
     Sets the plot appearances based on a known 'theme'.
 
     :param theme: A string denoting which plot appearance color scheme to use.
-     Current options are 'dark' and 'light'.
+     Current options are 'enDAQ', 'enDAQ_light', 'enDAQ_arial' and 'enDAQ_light_arial'.
+    :return: The plotly template which was set
     """
     assert isinstance(theme, str), "'theme' must be given as a string"
-    if theme == 'dark':
-        set_plot_appearances()
-    elif theme == 'light':
-        set_plot_appearances(graph_line_color='#DAD9D8', background_color='#FFFFFF', text_color='#404041',
-                             default_plotly_template='plotly_white')
-    else:
-        raise Exception(
-            "Theme %s not known.  Try customizing the appearences with the 'set_plot_appearances' function." % theme)
+    assert (theme in ['enDAQ_cloud', 'enDAQ_cloud_light', 'enDAQ', 'enDAQ_light']), "'" + theme + "' not an option"
 
+    define_theme()
+
+    define_theme(template_name='enDAQ', font_family="Arial", title_font_family="Arial")
+
+    define_theme(template_name='enDAQ_cloud_light', grid_line_color='#DAD9D8', graph_line_color='#404041',
+                 plot_background_color='#f3f3f3', background_color='#FFFFFF', text_color='#404041',
+                 default_plotly_template='plotly_white')
+
+    define_theme(template_name='enDAQ_light', grid_line_color='#DAD9D8', graph_line_color='#404041',
+                 plot_background_color='#f3f3f3', background_color='#FFFFFF', text_color='#404041',
+                 font_family="Arial", title_font_family="Arial",
+                 default_plotly_template='plotly_white')
+
+    # Set Default
+    pio.templates.default = theme
+
+    return pio.templates[theme]
 
 
 def get_center_of_coordinates(lats, lons, as_list=False, as_degrees=True):
@@ -175,5 +225,4 @@ def determine_plotly_map_zoom(
         raise NotImplementedError(f"{projection} projection is not implemented")
 
     return zoom
-    
     
