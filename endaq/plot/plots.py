@@ -3,6 +3,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
+from scipy import signal
+
+from endaq.calc.psd import to_octave, welch
 
 from .utilities import determine_plotly_map_zoom, get_center_of_coordinates
 
@@ -12,9 +15,6 @@ DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'accelerationPeakFull', 'accelerationRMSFull', 'velocityRMSFull', 'psuedoVelocityPeakFull',
     'displacementRMSFull', 'gpsSpeedFull', 'gyroscopeRMSFull', 'microphonoeRMSFull',
     'temperatureMeanFull', 'pressureMeanFull'])
-
-
-
 
 
 def multi_file_plot_row(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY, recording_colors=None,
@@ -191,8 +191,6 @@ def get_pure_numpy_2d_pca(df, recording_colors=None):
     return fig
 
 
-
-
 def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=True, color_by_column="GNSS Speed: Ground Speed"):
     """
     Plots GPS data on a map from a single recording, shading the points based some characteristic
@@ -226,3 +224,98 @@ def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=T
 
     return fig
     
+
+def octave_spectrogram(df, win, bins_per_octave=3, freq_start=20, max_freq=float('inf'), db_scale=True, log_scale_y_axis=True):
+    """
+    Produces an octave spectrogram of the given data.
+
+    :param df: The dataframe of sensor data
+    :param win: The time window for each of the columns in the spectrogram
+    :param bins_per_octave: The number of frequency bins per octave
+    :param freq_start: The center of the first frequency bin
+    :param max_freq: The maximum frequency to plot
+    :param db_scale: If the spectrogram should be log scaled for visibility (with 10*log10(x))
+    :param log_scale_y_axis: If the y-axis of the plot should be log scaled
+    :return: a tuple containing:
+     - the frequency bins
+     - the time bins
+     - the spectrogram data
+     - the corresponding plotly figure
+    """
+    ary = df.values.squeeze()
+
+    fs = (len(df) - 1) / (df.index[-1] - df.index[0])
+    N = int(fs * win) #Number of points in the fft
+    w = signal.blackman(N, False)
+    
+    freqs, bins, Pxx = signal.spectrogram(ary, fs, window=w, nperseg=N, noverlap=0)
+
+    time_dfs = [pd.DataFrame({bins[j]: Pxx[:, j]}, index=freqs) for j in range(len(bins))]
+
+    octave_dfs = list(map(lambda x: to_octave(x, freq_start, octave_bins=bins_per_octave, agg='sum'), time_dfs))
+    
+    combined_df = pd.concat(octave_dfs, axis=1)
+    
+    freqs = combined_df.index.values
+    Pxx = combined_df.values
+    
+    include_freqs_mask = freqs <= max_freq
+    Pxx = Pxx[include_freqs_mask]
+    freqs = freqs[include_freqs_mask]
+
+    if db_scale:
+        Pxx = 10 * np.log10(Pxx)
+
+    trace = [go.Heatmap(x=bins, y=freqs, z=Pxx, colorscale='Jet')]
+    layout = go.Layout(
+        yaxis={'title': 'Frequency (Hz)'},
+        xaxis={'title': 'Time (s)'},
+    )
+
+    fig = go.Figure(data=trace, layout=layout)
+    
+    if log_scale_y_axis:
+        fig.update_yaxes(type="log")
+
+    fig.update_traces(showscale=False)
+
+    return freqs, bins, Pxx, fig
+    
+	
+def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_scale_y_axis=True):
+    """
+    Produces a bar plot of an octave psd.
+
+    :param df: The dataframe of sensor data
+    :param bins_per_octave: The number of frequency bins per octave
+    :param f_start: The center of the first frequency bin
+    :param yaxis_title: The text to label the y-axis
+    :param log_scale_y_axis: If the y-axis should be log scaled
+    """
+    psd_df = welch(df, 1, scaling='spectrum')
+
+    octave_psd_df = to_octave(
+        psd_df,
+        f_start, 
+        bins_per_octave,
+        agg='sum',
+    )
+
+    frequency_durations = np.diff(octave_psd_df.index)
+
+    bar = go.Bar(
+        x=octave_psd_df.index.values,
+        y=octave_psd_df.values.squeeze(),
+        width=frequency_durations,
+    )
+    layout = go.Layout(
+        yaxis={'title': yaxis_title},
+        xaxis={'title': 'Frequency (Hz)'},
+    )
+
+    fig = go.Figure(data=bar, layout=layout)
+
+    if log_scale_y_axis:
+        fig.update_xaxes(type="log")
+
+    return fig
