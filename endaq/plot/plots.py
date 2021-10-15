@@ -319,3 +319,46 @@ def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_s
         fig.update_xaxes(type="log")
 
     return fig
+
+
+
+
+def multi_file_plot_row(multi_file_db):
+    """
+    Creates a set of subplots in a Plotly figure, with various attributes plotted.
+    
+    :param multi_file_db: The DataFrame with the file table data for multiple files
+     (having all the attributes in the DataFrame)
+    :return: The Plotly figure
+    """
+    rows_to_plot = np.array([
+        'accelerationPeakFull', 'accelerationRMSFull', 'velocityRMSFull', 'psuedoVelocityPeakFull',
+        'displacementRMSFull', 'gpsSpeedFull', 'gyroscopeRMSFull', 'microphonoeRMSFull',
+        'temperatureMeanFull', 'pressureMeanFull'])
+
+    should_plot_row = np.array([not multi_file_db[r].isnull().all() for r in rows_to_plot])
+
+    rows_to_plot = rows_to_plot[should_plot_row]
+
+    fig = make_subplots(
+        rows=1,
+        cols=len(rows_to_plot),
+        subplot_titles=rows_to_plot,
+    )
+
+    for j, row_name in enumerate(rows_to_plot):
+        fig.add_trace(
+            go.Scatter(
+                x=multi_file_db['recording_ts'],
+                y=multi_file_db[row_name],
+                name=row_name,
+                mode='markers',
+                text=multi_file_db['serial_number_id'].values,
+                marker_color=multi_file_db['serial_number_id'].map(SERIALS_TO_INDEX.get).values,
+            ),
+            row=1,
+            col=j + 1,
+        )
+    return fig.update_layout(width=len(rows_to_plot) * 400, showlegend=False)
+
+
