@@ -5,8 +5,8 @@ import numpy as np
 def define_theme(template_name="enDAQ_cloud",
                  default_plotly_template='plotly_dark',
                  text_color='#DAD9D8', font_family="Open Sans", title_font_family="Open Sans SemiBold",
-                 graph_line_color='#DAD9D8', grid_line_color="#404041", background_color='#0F0F0F',
-                 plot_background_color='#1c1c1c'):
+                 graph_line_color='#DAD9D8', grid_line_color="#404041", background_color='#262626',
+                 plot_background_color='#0F0F0F'):
     """
     Define a Plotly theme (template), allowing completely custom aesthetics
 
