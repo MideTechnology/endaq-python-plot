@@ -323,11 +323,11 @@ def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_s
 
 
 
-def multi_file_plot_row(multi_file_db, serial_to_index_dict):
+def multi_file_plot_row(multi_file_df, serial_to_index_dict):
     """
     Creates a set of subplots in a Plotly figure, with various attributes plotted.
     
-    :param multi_file_db: The DataFrame with the file table data for multiple files
+    :param multi_file_df: The DataFrame with the file table data for multiple files
      (having all the attributes in the DataFrame)
     :param serial_to_index_dict: A dictionary mapping device serial number to a unique index (integer).
      This is used to properly color each point plotted
@@ -338,7 +338,7 @@ def multi_file_plot_row(multi_file_db, serial_to_index_dict):
         'displacementRMSFull', 'gpsSpeedFull', 'gyroscopeRMSFull', 'microphonoeRMSFull',
         'temperatureMeanFull', 'pressureMeanFull'])
 
-    should_plot_row = np.array([not multi_file_db[r].isnull().all() for r in rows_to_plot])
+    should_plot_row = np.array([not multi_file_df[r].isnull().all() for r in rows_to_plot])
 
     rows_to_plot = rows_to_plot[should_plot_row]
 
@@ -351,12 +351,12 @@ def multi_file_plot_row(multi_file_db, serial_to_index_dict):
     for j, row_name in enumerate(rows_to_plot):
         fig.add_trace(
             go.Scatter(
-                x=multi_file_db['recording_ts'],
-                y=multi_file_db[row_name],
+                x=multi_file_df['recording_ts'],
+                y=multi_file_df[row_name],
                 name=row_name,
                 mode='markers',
-                text=multi_file_db['serial_number_id'].values,
-                marker_color=multi_file_db['serial_number_id'].map(serial_to_index_dict.get).values,
+                text=multi_file_df['serial_number_id'].values,
+                marker_color=multi_file_df['serial_number_id'].map(serial_to_index_dict.get).values,
             ),
             row=1,
             col=j + 1,
