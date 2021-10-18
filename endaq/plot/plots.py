@@ -323,12 +323,14 @@ def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_s
 
 
 
-def multi_file_plot_row(multi_file_db):
+def multi_file_plot_row(multi_file_db, serial_to_index_dict):
     """
     Creates a set of subplots in a Plotly figure, with various attributes plotted.
     
     :param multi_file_db: The DataFrame with the file table data for multiple files
      (having all the attributes in the DataFrame)
+    :param serial_to_index_dict: A dictionary mapping device serial number to a unique index (integer).
+     This is used to properly color each point plotted
     :return: The Plotly figure
     """
     rows_to_plot = np.array([
@@ -354,7 +356,7 @@ def multi_file_plot_row(multi_file_db):
                 name=row_name,
                 mode='markers',
                 text=multi_file_db['serial_number_id'].values,
-                marker_color=multi_file_db['serial_number_id'].map(SERIALS_TO_INDEX.get).values,
+                marker_color=multi_file_db['serial_number_id'].map(serial_to_index_dict.get).values,
             ),
             row=1,
             col=j + 1,
