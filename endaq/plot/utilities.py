@@ -102,7 +102,7 @@ def set_theme(theme='endaq'):
      Current options are 'endaq', 'endaq_light', 'endaq_arial' and 'endaq_light_arial'.
     :return: The plotly template which was set
     """
-    if isinstance(theme, str):
+    if not isinstance(theme, str):
         raise TypeError("'theme' must be given as a string")
         
     theme = theme.lower()
