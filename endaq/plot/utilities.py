@@ -2,7 +2,7 @@ import plotly.io as pio
 import numpy as np
 
 
-def define_theme(template_name="enDAQ_cloud",
+def define_theme(template_name="endaq_cloud",
                  default_plotly_template='plotly_dark',
                  text_color='#DAD9D8', font_family="Open Sans", title_font_family="Open Sans SemiBold",
                  graph_line_color='#DAD9D8', grid_line_color="#404041", background_color='#262626',
@@ -94,26 +94,30 @@ def define_theme(template_name="enDAQ_cloud",
     return pio.templates[template_name]
 
 
-def set_theme(theme='enDAQ'):
+def set_theme(theme='endaq'):
     """
     Sets the plot appearances based on a known 'theme'.
 
     :param theme: A string denoting which plot appearance color scheme to use.
-     Current options are 'enDAQ', 'enDAQ_light', 'enDAQ_arial' and 'enDAQ_light_arial'.
+     Current options are 'endaq', 'endaq_light', 'endaq_arial' and 'endaq_light_arial'.
     :return: The plotly template which was set
     """
-    assert isinstance(theme, str), "'theme' must be given as a string"
-    assert (theme in ['enDAQ_cloud', 'enDAQ_cloud_light', 'enDAQ', 'enDAQ_light']), "'" + theme + "' not an option"
+    if isinstance(theme, str):
+        raise TypeError("'theme' must be given as a string")
+        
+    theme = theme.lower()
+    
+    assert (theme in ['endaq_cloud', 'endaq_cloud_light', 'endaq, 'endaq_light']), "'" + theme + "' not an option"
 
     define_theme()
 
-    define_theme(template_name='enDAQ', font_family="Arial", title_font_family="Arial")
+    define_theme(template_name='endaq', font_family="Arial", title_font_family="Arial")
 
-    define_theme(template_name='enDAQ_cloud_light', grid_line_color='#DAD9D8', graph_line_color='#404041',
+    define_theme(template_name='endaq_cloud_light', grid_line_color='#DAD9D8', graph_line_color='#404041',
                  plot_background_color='#f3f3f3', background_color='#FFFFFF', text_color='#404041',
                  default_plotly_template='plotly_white')
 
-    define_theme(template_name='enDAQ_light', grid_line_color='#DAD9D8', graph_line_color='#404041',
+    define_theme(template_name='endaq_light', grid_line_color='#DAD9D8', graph_line_color='#404041',
                  plot_background_color='#f3f3f3', background_color='#FFFFFF', text_color='#404041',
                  font_family="Arial", title_font_family="Arial",
                  default_plotly_template='plotly_white')
