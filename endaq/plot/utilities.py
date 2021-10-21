@@ -107,7 +107,7 @@ def set_theme(theme='endaq'):
         
     theme = theme.lower()
     
-    if theme not in ['endaq_cloud', 'endaq_cloud_light', 'endaq, 'endaq_light']:
+    if theme not in ['endaq_cloud', 'endaq_cloud_light', 'endaq', 'endaq_light']:
         raise ValueError("'" + theme + "' not an option")
 
     define_theme()
