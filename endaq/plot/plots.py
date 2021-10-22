@@ -10,7 +10,6 @@ from endaq.calc.psd import to_octave, welch
 from .utilities import determine_plotly_map_zoom, get_center_of_coordinates
 
 
-
 DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'accelerationPeakFull', 'accelerationRMSFull', 'velocityRMSFull', 'psuedoVelocityPeakFull',
     'displacementRMSFull', 'gpsSpeedFull', 'gyroscopeRMSFull', 'microphonoeRMSFull',
