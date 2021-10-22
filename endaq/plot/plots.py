@@ -28,11 +28,15 @@ def multi_file_plot_attributes(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO
     :param width_per_subplot: The width to make every subplot
     :return: A Plotly figure of all the subplots desired to be plotted
     """
+    if not isinstance(rows_to_plot, np.ndarray):
+        raise TypeError(
+            "Instead of an ndarray given for 'rows_to_plot', a variable of type %s was given" % str(type(rows_to_plot)))
 
-    assert isinstance(rows_to_plot, np.ndarray), \
-        "Instead of an ndarray given for 'rows_to_plot', a variable of type %s was given" % str(type(rows_to_plot))
-    assert len(rows_to_plot) > 0, "At least one value must be given for 'rows_to_plot'"
-    assert all(isinstance(row, str) for row in rows_to_plot), "All rows to plot must be given as a string!"
+    if len(rows_to_plot) == 0:
+        raise ValueError("At least one value must be given for 'rows_to_plot'")
+
+    if not all(isinstance(row, str) for row in rows_to_plot):
+        raise TypeError("All rows to plot must be given as a string!")
 
     should_plot_row = np.array([not multi_file_db[r].isnull().all() for r in rows_to_plot])
 
