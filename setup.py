@@ -4,10 +4,16 @@ with open('README.rst', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
 
 INSTALL_REQUIRES = [
-    "numpy",
-    "pandas",
-    "plotly",
+    "numpy>=1.19.5",
+    "pandas>=1.1.5",
+    "plotly==5.3.1",
+    "scipy>=1.7.1",
+    "endaq-calc>=1.0.0b1",
     ]
+
+
+
+
 
 TEST_REQUIRES = [
     ]
