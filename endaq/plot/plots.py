@@ -63,6 +63,19 @@ def multi_file_plot_attributes(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO
 
 def general_get_correlation_figure(merged_df, recording_colors=None, hover_names=None,
                                    characteristics_to_show_on_hover=[], starting_cols=None):
+    """
+    A function to create a plot with two drop-down menus, each populated with a set of options corresponding to the
+    scalar quantities contained in the given dataframe.   The data points will then be plotted with the X and Y axis
+    corresponding to the selected attributes from the drop-down menu.
+
+    :param merged_df: A Pandas DataFrame of data to use for producing the plot
+    :param recording_colors: The colors of each of the points to be plotted
+    :param hover_names: The names of the points to display when they are hovered on
+    :param characteristics_to_show_on_hover: The set of characteristics of the data to display when hovered over
+    :param starting_cols: The two starting columns for the dropdown menus (will be the first two available
+     if None is given)
+    :return: The interactive Plotly figure
+    """
     if recording_colors is None:
         recording_colors = np.full(len(merged_df), 0)
 
@@ -149,8 +162,8 @@ def get_pure_numpy_2d_pca(df, recording_colors=None):
     :return: A plotly figure as described in the main function description
 
     TODO:
-     - Add assert statements to ensure the given dataframe contains enough values of the desired type
-     - Add assert statement to ensure the recording_colors given (if not None) are the proper length
+     - Add type checking statements to ensure the given dataframe contains enough values of the desired type
+     - Add type checking statements to ensure the recording_colors given (if not None) are the proper length
     """
 
     # Drop all non-float64 type columns, and drop all columns with standard deviation of 0 because this will result
