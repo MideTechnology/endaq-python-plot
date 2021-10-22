@@ -17,7 +17,7 @@ DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'temperatureMeanFull', 'pressureMeanFull'])
 
 
-def multi_file_plot_row(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY, recording_colors=None,
+def multi_file_plot_attributes(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY, recording_colors=None,
                         width_per_subplot=400):
     """
     Creates a Plotly figure plotting all the desired attributes from the given DataFrame.
@@ -36,9 +36,6 @@ def multi_file_plot_row(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_I
 
     should_plot_row = np.array([not multi_file_db[r].isnull().all() for r in rows_to_plot])
 
-    if recording_colors is None:
-        recording_colors = np.full(len(multi_file_db), 0)
-
     rows_to_plot = rows_to_plot[should_plot_row]
 
     fig = make_subplots(
@@ -48,19 +45,16 @@ def multi_file_plot_row(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_I
     )
 
     for j, row_name in enumerate(rows_to_plot):
-        fig.add_trace(
-            go.Scatter(
-                x=multi_file_db['recording_ts'],
-                y=multi_file_db[row_name],
-                name=row_name,
-                mode='markers',
-                text=multi_file_db['serial_number_id'].values,
-                marker_color=recording_colors,
-                # marker_color=multi_file_db['serial_number_id'].map(SERIALS_TO_INDEX.get).values,
-            ),
-        row=1,
-        col=j + 1,
+        scatter_trace = go.Scatter(
+            x=multi_file_db['recording_ts'],
+            y=multi_file_db[row_name],
+            name=row_name,
+            mode='markers',
+            text=multi_file_db['serial_number_id'].values,
+            marker_color=recording_colors,
         )
+        fig.add_trace(scatter_trace, row=1, col=j + 1)
+
     return fig.update_layout(width=len(rows_to_plot)*width_per_subplot, showlegend=False)
 
 
@@ -225,12 +219,12 @@ def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=T
     return fig
     
 
-def octave_spectrogram(df, win, bins_per_octave=3, freq_start=20, max_freq=float('inf'), db_scale=True, log_scale_y_axis=True):
+def octave_spectrogram(df, window, bins_per_octave=3, freq_start=20, max_freq=float('inf'), db_scale=True, log_scale_y_axis=True):
     """
     Produces an octave spectrogram of the given data.
 
     :param df: The dataframe of sensor data
-    :param win: The time window for each of the columns in the spectrogram
+    :param window: The time window for each of the columns in the spectrogram
     :param bins_per_octave: The number of frequency bins per octave
     :param freq_start: The center of the first frequency bin
     :param max_freq: The maximum frequency to plot
@@ -245,7 +239,7 @@ def octave_spectrogram(df, win, bins_per_octave=3, freq_start=20, max_freq=float
     ary = df.values.squeeze()
 
     fs = (len(df) - 1) / (df.index[-1] - df.index[0])
-    N = int(fs * win) #Number of points in the fft
+    N = int(fs * window) #Number of points in the fft
     w = signal.blackman(N, False)
     
     freqs, bins, Pxx = signal.spectrogram(ary, fs, window=w, nperseg=N, noverlap=0)
@@ -281,7 +275,7 @@ def octave_spectrogram(df, win, bins_per_octave=3, freq_start=20, max_freq=float
 
     return freqs, bins, Pxx, fig
     
-	
+
 def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_scale_y_axis=True):
     """
     Produces a bar plot of an octave psd.
@@ -319,48 +313,5 @@ def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_s
         fig.update_xaxes(type="log")
 
     return fig
-
-
-
-
-def multi_file_plot_row(multi_file_df, serial_to_index_dict):
-    """
-    Creates a set of subplots in a Plotly figure, with various attributes plotted.
-    
-    :param multi_file_df: The DataFrame with the file table data for multiple files
-     (having all the attributes in the DataFrame)
-    :param serial_to_index_dict: A dictionary mapping device serial number to a unique index (integer).
-     This is used to properly color each point plotted
-    :return: The Plotly figure
-    """
-    rows_to_plot = np.array([
-        'accelerationPeakFull', 'accelerationRMSFull', 'velocityRMSFull', 'psuedoVelocityPeakFull',
-        'displacementRMSFull', 'gpsSpeedFull', 'gyroscopeRMSFull', 'microphonoeRMSFull',
-        'temperatureMeanFull', 'pressureMeanFull'])
-
-    should_plot_row = np.array([not multi_file_df[r].isnull().all() for r in rows_to_plot])
-
-    rows_to_plot = rows_to_plot[should_plot_row]
-
-    fig = make_subplots(
-        rows=1,
-        cols=len(rows_to_plot),
-        subplot_titles=rows_to_plot,
-    )
-
-    for j, row_name in enumerate(rows_to_plot):
-        fig.add_trace(
-            go.Scatter(
-                x=multi_file_df['recording_ts'],
-                y=multi_file_df[row_name],
-                name=row_name,
-                mode='markers',
-                text=multi_file_df['serial_number_id'].values,
-                marker_color=multi_file_df['serial_number_id'].map(serial_to_index_dict.get).values,
-            ),
-            row=1,
-            col=j + 1,
-        )
-    return fig.update_layout(width=len(rows_to_plot) * 400, showlegend=False)
 
 
