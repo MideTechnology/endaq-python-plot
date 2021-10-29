@@ -466,3 +466,41 @@ def rolling_min_max_envelope(df: pd.DataFrame, desired_num_points: int = 250, pl
         opacity=opacity
     )
 
+
+def around_peak(df: pd.DataFrame, num: int = 1000, leading_ratio: float = 0.5):
+    """
+    A function to plot the data surrounding the largest peak (or valley) in the given data.
+    The 'peak' is defined by the point in the absolute value of the given data with the largest value.
+
+    :param df: A dataframe indexed by time stamps
+    :param num: The number of points to plot
+    :param leading_ratio: The ratio of the data to be viewed that will come before the peak
+    :return: A Plotly figure containing the plot
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"The `df` parmeter must be of type `pd.DataFrame` but was given type {type(df)} instead.")
+
+    if not isinstance(num, int):
+        raise TypeError(f"The `num` parameter must be an `int` type, but was given {type(num)}.")
+
+    if not isinstance(leading_ratio, float):
+        raise TypeError(f"The `leading_ratio` parameter must be a `float` type, but was given {type(leading_ratio)}.")
+
+    if len(df) == 0:
+        raise ValueError(f"The parameter `df` must have nonzero length, but has shape {df.shape} instead")
+
+    if num < 3:
+        raise ValueError(f"The `num` parameter must be at least 3, but {num} was given.")
+
+    if leading_ratio < 0 or leading_ratio > 1:
+        raise ValueError("The `leading_ratio` parameter must be a float value in the "
+                         f"range [0,1], but was given {leading_ratio} instead.")
+
+    max_i = df.abs().max(axis=1).reset_index(drop=True).idxmax()
+
+    # These can go below and above the number of valid indices, but that can be ignored since
+    # they'll only be used to slice the data in a way that is okay to go over/under
+    window_start = max_i - int(num * leading_ratio)
+    window_end = max_i + int(num * (1-leading_ratio))
+
+    return px.line(df.iloc[window_start: window_end])
