@@ -15,7 +15,8 @@ def rolling_enveloped_dashboard(
     channel_df_dict: dict, desired_num_points: int = 250, num_rows: Optional[int] = None,
     num_cols: Optional[int] = 3, width_for_subplot_row: int = 400, height_for_subplot_row: int = 400,
     subplot_colors: Optional[collections.Container] = None, min_points_to_plot: int = 1,
-    plot_as_bars: bool = False, y_axis_bar_plot_padding: float = 0.06) -> go.Figure:
+    plot_as_bars: bool = False, plot_full_single_channel: bool = False, opacity: float = 1, y_axis_bar_plot_padding: float = 0.06
+) -> go.Figure:
     """
     A function to create a Plotly Figure with sub-plots for each of the available data sub-channels, designed to reduce
     the number of points/data being plotted without minimizing the insight available from the plots.  It will plot
@@ -54,6 +55,9 @@ def rolling_enveloped_dashboard(
      data consists of a line plotted for the maximum values contained in each of the time windows, and another line
      plotted for the minimum values.  Together these lines create a boundary which contains all the data points
      recorded in the originally recorded data.
+    :param plot_full_single_channel: If instead of a dashboard of subplots a single plot with multiple sub-channels
+     should be created.  If this is True, only one (key, value) pair can be given for the `channel_df_dict` parameter
+    :param opacity: The opacity to use for plotting bars/lines
     :param y_axis_bar_plot_padding: Due to some unknown reason the bar subplots aren't having their y axis ranges
      automatically scaled so this is the ratio of the total y-axis data range to pad both the top and bottom of the
      y axis with.  The default value is the one it appears Plotly uses as well.
@@ -78,14 +82,14 @@ def rolling_enveloped_dashboard(
     subplot_titles = [' '.join((k, col)) for (k, v) in channel_df_dict.items() for col in v.columns]
 
     if num_rows is None and num_cols is None:
-        raise Exception("Both `num_rows` and `num_columns` were given as `None`!  "
+        raise TypeError("Both `num_rows` and `num_columns` were given as `None`!  "
                         "A maximum of one of these two parameters may be given as None.")
     elif num_rows is None:
         num_rows = 1 + (len(subplot_titles) - 1) // num_cols
     elif num_cols is None:
         num_cols = 1 + (len(subplot_titles) - 1) // num_rows
     elif len(subplot_titles) > num_rows * num_cols:
-        raise Exception("The values given for `num_rows` and `num_columns` result in a maximum "
+        raise ValueError("The values given for `num_rows` and `num_columns` result in a maximum "
                         f"of {num_rows * num_cols} avaialable sub-plots, but {len(subplot_titles)} subplots need "
                         "to be plotted!   Try setting one of these variables to `None`, it will then "
                         "automatically be set to the optimal number of rows/columns.")
@@ -98,15 +102,24 @@ def rolling_enveloped_dashboard(
     else:
         colorway = subplot_colors
 
-    fig = make_subplots(
-        rows=num_rows,
-        cols=num_cols,
-        subplot_titles=subplot_titles,
-        figure=go.Figure(
-            layout_height=height_for_subplot_row * num_rows,
-            layout_width=width_for_subplot_row * num_cols,
-        ),
-    )
+    if plot_full_single_channel:
+        if len(channel_df_dict) != 1:
+            raise ValueError("The 'channel_df_dict' parameter must be length 1 when "
+                             "'plot_full_single_channel' is set to true!")
+
+        num_rows = 1
+        num_cols = 1
+        fig = go.Figure(layout_title_text=list(channel_df_dict.keys())[0])
+    else:
+        fig = make_subplots(
+            rows=num_rows,
+            cols=num_cols,
+            subplot_titles=subplot_titles,
+            figure=go.Figure(
+                layout_height=height_for_subplot_row * num_rows,
+                layout_width=width_for_subplot_row * num_cols,
+            ),
+        )
 
     # A counter to keep track of which subplot is currently being worked on
     subplot_num = 0
@@ -115,7 +128,7 @@ def rolling_enveloped_dashboard(
     layout_changes_to_make = {}
 
     for channel_data in channel_df_dict.values():
-        window = int(np.around(1+(channel_data.shape[0]-1) / desired_num_points, decimals=0))
+        window = int(np.around((channel_data.shape[0]-1) / desired_num_points, decimals=0))
 
         # If a window size of 1 is determined, it sets the stride to 1 so we don't get an error as a result of the
         # 0 length stride
@@ -165,6 +178,7 @@ def rolling_enveloped_dashboard(
                             x=x_patch_line_segs,
                             y=y_patch_line_segs,
                             name=subchannel_name,
+                            opacity=opacity,
                             mode='lines',
                             line_color=cur_color,
                             showlegend=False,
@@ -181,6 +195,7 @@ def rolling_enveloped_dashboard(
                         x=min_max_tuple[0].index,
                         y=min_max_tuple[1][subchannel_name] - min_max_tuple[0][subchannel_name],
                         marker_color=cur_color,
+                        opacity=opacity,
                         marker_line_width=0,
                         base=min_max_tuple[0][subchannel_name],
                         showlegend=False,
@@ -189,10 +204,16 @@ def rolling_enveloped_dashboard(
                 )
 
                 # Adds a (key, value) pair to the dict for setting this subplot's Y-axis display range (applied later)
-                layout_changes_to_make[f'yaxis{1 + subplot_num}_range'] = [
-                    min_data_point - y_padding,
-                    max_data_point + y_padding
-                ]
+                min_y_range = min_data_point - y_padding
+                max_y_range = max_data_point + y_padding
+                y_axis_id = f'yaxis{1 + subplot_num}_range'
+                if plot_full_single_channel:
+                    y_axis_id = 'yaxis_range'
+                    if layout_changes_to_make:
+                        min_y_range = min(min_y_range, layout_changes_to_make[y_axis_id][0])
+                        max_y_range = max(max_y_range, layout_changes_to_make[y_axis_id][1])
+
+                layout_changes_to_make[y_axis_id] = [min_y_range, max_y_range]
             else:
                 for cur_df in min_max_tuple:
                     traces.append(
@@ -200,23 +221,28 @@ def rolling_enveloped_dashboard(
                             x=cur_df.index,
                             y=cur_df[subchannel_name],
                             name=subchannel_name,
+                            opacity=opacity,
                             line_color=cur_color,
                             showlegend=False,
                         )
                     )
 
             # Add the traces created for the current subchannel of data to the plotly figure
-            fig.add_traces(
-                traces,
-                rows=1 + subplot_num // num_cols,
-                cols=1 + subplot_num % num_cols,
-            )
+            if plot_full_single_channel:
+                fig.add_traces(traces)
+            else:
+                fig.add_traces(
+                    traces,
+                    rows=1 + subplot_num // num_cols,
+                    cols=1 + subplot_num % num_cols,
+                )
 
             subplot_num += 1
 
     fig.update_layout(
         **layout_changes_to_make,
         bargap=0,
+        barmode='overlay'
     )
     return fig
 
@@ -259,9 +285,21 @@ if __name__ == '__main__':
         CHANNEL_DFS = {
             doc.channels[ch].name: endaq.ide.to_pandas(doc.channels[ch], time_mode='datetime') for ch in doc.channels}
 
-
+        SINGLE_CHANNEL = r'40g DC Acceleration'
+        JUST_ACCEL_DFS = {SINGLE_CHANNEL: CHANNEL_DFS[SINGLE_CHANNEL]}
 
         # Examples
+        rolling_enveloped_dashboard(
+            JUST_ACCEL_DFS,
+            plot_full_single_channel=True,
+        ).show()
+
+        rolling_enveloped_dashboard(
+            JUST_ACCEL_DFS,
+            plot_as_bars=True,
+            plot_full_single_channel=True,
+        ).show()
+
         rolling_enveloped_dashboard(
             CHANNEL_DFS,
             desired_num_points=100,
@@ -272,8 +310,6 @@ if __name__ == '__main__':
             num_cols=2,
             num_rows=None,
         ).show()
-
-
 
         rolling_enveloped_dashboard(
             CHANNEL_DFS,
