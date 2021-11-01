@@ -1,6 +1,7 @@
 import collections
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.io as pio
@@ -138,15 +139,34 @@ def rolling_enveloped_dashboard(
         min_max_tuple = (rolling_n.min()[::stride], rolling_n.max()[::stride])
         min_max_equal = min_max_tuple[0] == min_max_tuple[1]
 
+        is_nan_min_max_mask = np.logical_not(
+            np.logical_and(
+                pd.isnull(min_max_tuple[0]),
+                pd.isnull(min_max_tuple[1])))
+
         # Loop through each of the sub-channels, and their respective '0-height rectangle mask'
         for subchannel_name, cur_min_max_equal in min_max_equal[channel_data.columns].iteritems():
 
             traces = []
             cur_color = colorway[subplot_num % len(colorway)]
+            cur_subchannel_non_nan_mask = is_nan_min_max_mask[subchannel_name]
 
+            # If there are less data points than the desired number of points
+            # to be plotted, just plot the data as a line plot
+            if len(channel_data) < desired_num_points:
+                not_nan_mask = np.logical_not(pd.isnull(channel_data[subchannel_name]))
+                traces.append(
+                    go.Scatter(
+                        x=channel_data.index[not_nan_mask],
+                        y=channel_data.loc[not_nan_mask, subchannel_name],
+                        name=subchannel_name,
+                        opacity=opacity,
+                        line_color=cur_color,
+                        showlegend=False,
+                    )
+                )
             # If it's going to plot the data with bars
-            # if plot_as_bars and len(min_max_tuple[0]) > desired_num_points:
-            if plot_as_bars and len(channel_data) > desired_num_points:
+            elif plot_as_bars:
                 # If there are any 0-height rectangles
                 if np.any(cur_min_max_equal):
                     equal_data_df = min_max_tuple[0].loc[cur_min_max_equal.values, subchannel_name]
@@ -192,12 +212,13 @@ def rolling_enveloped_dashboard(
 
                 traces.append(
                     go.Bar(
-                        x=min_max_tuple[0].index,
-                        y=min_max_tuple[1][subchannel_name] - min_max_tuple[0][subchannel_name],
+                        x=min_max_tuple[0].index[cur_subchannel_non_nan_mask],
+                        y=(min_max_tuple[1].loc[cur_subchannel_non_nan_mask, subchannel_name] -
+                           min_max_tuple[0].loc[cur_subchannel_non_nan_mask, subchannel_name]),
                         marker_color=cur_color,
                         opacity=opacity,
                         marker_line_width=0,
-                        base=min_max_tuple[0][subchannel_name],
+                        base=min_max_tuple[0].loc[cur_subchannel_non_nan_mask, subchannel_name],
                         showlegend=False,
                         name=subchannel_name,
                     )
@@ -218,8 +239,8 @@ def rolling_enveloped_dashboard(
                 for cur_df in min_max_tuple:
                     traces.append(
                         go.Scatter(
-                            x=cur_df.index,
-                            y=cur_df[subchannel_name],
+                            x=cur_df.index[cur_subchannel_non_nan_mask],
+                            y=cur_df.loc[cur_subchannel_non_nan_mask, subchannel_name],
                             name=subchannel_name,
                             opacity=opacity,
                             line_color=cur_color,
