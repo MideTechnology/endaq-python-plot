@@ -1,17 +1,12 @@
 from __future__ import annotations
 
 import collections
-
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.io as pio
-
 from typing import Optional
-
-import endaq.ide
-import endaq.plot
 
 
 def rolling_enveloped_dashboard(
@@ -385,6 +380,8 @@ def rolling_metric_dashboard(channel_df_dict: dict, desired_num_points: int = 25
 
 
 if __name__ == '__main__':
+    import endaq.ide
+
     file_urls = ['https://info.endaq.com/hubfs/data/surgical-instrument.ide',
                  'https://info.endaq.com/hubfs/data/97c3990f-Drive-Home_70-1616632444.ide',
                  'https://info.endaq.com/hubfs/data/High-Drop.ide',
@@ -406,8 +403,6 @@ if __name__ == '__main__':
                  'https://info.endaq.com/hubfs/data/Drive-Home.ide',
                  'https://info.endaq.com/hubfs/data/Mining-Data.ide',
                  'https://info.endaq.com/hubfs/data/Mide-Airport-Drive-Lexus-Hybrid-Dash-W8.ide']
-
-    endaq.plot.utilities.set_theme()
 
     for j in [4]:
         doc = endaq.ide.get_doc(file_urls[j])
