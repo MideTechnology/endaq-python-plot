@@ -37,68 +37,6 @@ def sample_spacing(
     return dt
 
 
-def get_channel_ids(doc):
-    return [list(d)[0] for d in list(doc.channels.items())]
-
-
-def plot_row(doc, plot_len, mean_thresh, dfs, df_ide, line_color="#EE7F27", std_color="#6914F0"):
-    col = 1
-    cols = df_ide.shape[0]
-    fig = make_subplots(rows=1, cols=cols, subplot_titles=list(df_ide["Name"]))
-
-    for i in get_channel_ids(doc):
-        df = dfs[df_ide[df_ide["CH ID"] == i]["CH #"].iloc[0]]
-        fs = df_ide[df_ide["CH ID"] == i]["Frequency (Hz)"].iloc[0]
-
-        n = int(df.shape[0] / plot_len)
-        time = df.reset_index()["Time (s)"]
-        if n > 0:
-            time = time.rolling(n).mean().iloc[::n]
-
-        for c, c_i in enumerate(df.columns):
-            if n == 0:
-                fig.add_trace(
-                    go.Scatter(x=time, y=df[c], name=str(i + c_i / 10), line=dict(color=line_color)),
-                    row=1,
-                    col=col,
-                )
-            elif fs < mean_thresh:
-                fig.add_trace(
-                    go.Scatter(
-                        x=time,
-                        y=df[c].rolling(n).mean().iloc[::n],
-                        name="Mean",
-                        line=dict(color=line_color),
-                    ),
-                    row=1,
-                    col=col,
-                )
-            else:
-                fig.add_trace(
-                    go.Scatter(
-                        x=time,
-                        y=df[c].abs().rolling(n).max().iloc[::n],
-                        name="Max",
-                        line=dict(color=line_color),
-                    ),
-                    row=1,
-                    col=col,
-                )
-                fig.add_trace(
-                    go.Scatter(
-                        x=time,
-                        y=df[c].rolling(n).std().iloc[::n],
-                        name="Std Dev",
-                        line=dict(color=std_color),
-                    ),
-                    row=1,
-                    col=col,
-                )
-            col += 1
-
-    return fig.update_layout(width=cols * 400, showlegend=False)
-
-
 def multi_file_plot_attributes(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY, recording_colors=None,
                         width_per_subplot=400):
     """

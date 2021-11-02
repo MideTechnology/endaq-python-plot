@@ -15,8 +15,8 @@ import endaq.plot
 def rolling_enveloped_dashboard(
     channel_df_dict: dict, desired_num_points: int = 250, num_rows: Optional[int] = None,
     num_cols: Optional[int] = 3, width_for_subplot_row: int = 400, height_for_subplot_row: int = 400,
-    subplot_colors: Optional[collections.Container] = None, min_points_to_plot: int = 1,
-    plot_as_bars: bool = False, plot_full_single_channel: bool = False, opacity: float = 1, y_axis_bar_plot_padding: float = 0.06
+    subplot_colors: Optional[collections.Container] = None, min_points_to_plot: int = 1, plot_as_bars: bool = False,
+    plot_full_single_channel: bool = False, opacity: float = 1, y_axis_bar_plot_padding: float = 0.06
 ) -> go.Figure:
     """
     A function to create a Plotly Figure with sub-plots for each of the available data sub-channels, designed to reduce
@@ -268,6 +268,116 @@ def rolling_enveloped_dashboard(
     return fig
 
 
+def rolling_metric_dashboard(channel_df_dict: dict, desired_num_points: int = 250, num_rows: Optional[int] = None,
+             num_cols: Optional[int] = 3, rolling_metrics_to_plot: tuple = ('mean', 'std'),
+             metric_colors: Optional[collections.Container] = None, width_for_subplot_row: int = 400,
+             height_for_subplot_row: int = 400) -> go.Figure:
+    """
+    A function to create a dashboard of subplots of the given data, plotting a set of rolling metrics.
+
+    :param channel_df_dict: A dictionary mapping channel names to Pandas DataFrames of that channels data
+    :param desired_num_points:  The desired number of points to be plotted in each subplot.  The number of points
+     will be reduced from it's original sampling rate by applying metrics (e.g. min, max) over sliding windows
+     and then using that information to represent/visualize the data contained within the original data.  If less than
+     the desired number of points are present, then a sliding window will NOT be used, and instead the points will be
+     plotted as they were originally recorded  (also the subplot will NOT be plotted as a bar based plot even if
+     `plot_as_bars` was set to true).
+    :param num_rows: The number of columns of subplots to be created inside the Plotly figure. If None is given, (then
+    `num_cols` must not be None), then this number will automatically be determined by what's needed.  If more rows
+     are specified than are needed, the number of rows will be reduced to the minimum needed to contain all the subplots
+    :param num_cols:The number of columns of subplots to be created inside the Plotly figure.  See the description of
+     the `num_rows` parameter for more details on this parameter, and how the two interact.  This also follows the same
+     approach to handling None when given
+    :param rolling_metrics_to_plot: A tuple of strings which indicate what rolling metrics to plot for each subchannel.
+     The options are ['mean', 'std', 'absolute max'] which correspond to the mean, standard deviation, and maximum
+     of the absolute value.
+    :param metric_colors: An 'array-like' object of strings containing colors to be cycled through for the metrics.
+     If None is given (which is the default), then the `colorway` variable in Plotly's current theme/template will
+     be used to color the metric data, repeating from the start of the `colorway` if all colors have been used.
+     The first value corresponds to the color if not enough points of data exist for a rolling metric,
+     and the others correspond to the metric in `rolling_metrics_to_plot` in the same order they are given
+    :param width_for_subplot_row: The width of the area used for a single subplot (in pixels).
+    :param height_for_subplot_row: The height of the area used for a single subplot (in pixels).
+    :return: The Plotly Figure containing the subplots of sensor data (the 'dashboard')
+    """
+    if len(rolling_metrics_to_plot) == 0:
+        raise ValueError("At least one rolling metric must be specified in `rolling_metrics_to_plot`!")
+
+    subplot_titles = [' '.join((k, col)) for (k, v) in channel_df_dict.items() for col in v.columns]
+
+    if num_rows is None and num_cols is None:
+        raise TypeError("Both `num_rows` and `num_columns` were given as `None`!  "
+                        "A maximum of one of these two parameters may be given as None.")
+    elif num_rows is None:
+        num_rows = 1 + (len(subplot_titles) - 1) // num_cols
+    elif num_cols is None:
+        num_cols = 1 + (len(subplot_titles) - 1) // num_rows
+    elif len(subplot_titles) > num_rows * num_cols:
+        raise ValueError("The values given for `num_rows` and `num_columns` result in a maximum "
+                         f"of {num_rows * num_cols} avaialable sub-plots, but {len(subplot_titles)} subplots need "
+                         "to be plotted!   Try setting one of these variables to `None`, it will then "
+                         "automatically be set to the optimal number of rows/columns.")
+    else:
+        num_rows = 1 + (len(subplot_titles) - 1) // num_cols
+        num_cols = int(np.ceil(len(subplot_titles)/num_rows))
+
+    if metric_colors is None:
+        colorway = pio.templates[pio.templates.default]['layout']['colorway']
+    else:
+        colorway = metric_colors
+    fig = make_subplots(rows=num_rows, cols=num_cols, subplot_titles=subplot_titles)
+    subplot_num = 0
+    for channel_name, channel_data in channel_df_dict.items():
+        n = int(channel_data.shape[0] / desired_num_points)
+
+        if n > 0:
+            time = channel_data.rolling(n).mean().iloc[::n].index
+        else:
+            time = channel_data.index
+
+        for c_i, (subchannel_name, subchannel_data) in enumerate(channel_data.iteritems()):
+            for metric in rolling_metrics_to_plot:
+                if n == 0:
+                    data = subchannel_data.values
+                    name = subchannel_name
+                    color = colorway[0]
+                elif metric == 'mean':
+                    data = subchannel_data.rolling(n).mean().iloc[::n]
+                    name = 'Mean'
+                    color = colorway[1]
+                elif metric == 'std':
+                    data = subchannel_data.rolling(n).std().iloc[::n]
+                    name = 'STD Dev'
+                    color = colorway[2]
+                elif metric == 'absolute max':
+                    data = subchannel_data.abs().rolling(n).max().iloc[::n]
+                    name = 'Max'
+                    color = colorway[3]
+                else:
+                    raise ValueError(f"metric given to `rolling_metrics_to_plot` is not valid!  Was given {metric}"
+                                     " which is not in the allowed options of ['mean', 'std', 'absolute max']")
+                fig.add_trace(
+                    go.Scatter(
+                        x=time,
+                        y=data,
+                        name=name,
+                        line=dict(color=color)),
+                    row=1 + subplot_num // num_cols,
+                    col=1 + subplot_num % num_cols,
+                )
+
+                if n == 0:
+                    break
+
+            subplot_num += 1
+
+    return fig.update_layout(
+        width=num_cols * width_for_subplot_row,
+        height=num_rows * height_for_subplot_row,
+        showlegend=False,
+    )
+
+
 
 
 
@@ -363,6 +473,11 @@ if __name__ == '__main__':
             min_points_to_plot=10,
             num_rows=999999,
             num_cols=4,
+        ).show()
+
+        rolling_metric_dashboard(
+            CHANNEL_DFS,
+            rolling_metrics_to_plot=('mean', 'absolute max', 'std'),
         ).show()
 
         print(str(j) + " done!")
