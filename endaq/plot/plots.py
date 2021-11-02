@@ -391,10 +391,6 @@ def rolling_min_max_envelope(df: pd.DataFrame, desired_num_points: int = 250, pl
      be used to color the data on each of the sub-channels uniquely, repeating from the start of the `colorway` if
      all colors have been used.
     :return: The Plotly Figure with the data plotted
-
-    TO-DO:
-     - Ensure that this works with dataframes of subchannels that were merged together and don't necessarily
-      share the same time stamps (and thus have a ton of NaN values)
     """
 
     return rolling_enveloped_dashboard(
