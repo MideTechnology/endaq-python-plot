@@ -1,19 +1,42 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy import signal
+import typing
+from typing import Optional
+import collections
 
-from endaq.calc.psd import to_octave, welch
+from endaq.calc.psd import to_octave, welch  # ,sample_spacing  THIS ISN'T YET IN MASTER
 
 from .utilities import determine_plotly_map_zoom, get_center_of_coordinates
-
+from .dashboards import rolling_enveloped_dashboard
 
 DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'accelerationPeakFull', 'accelerationRMSFull', 'velocityRMSFull', 'psuedoVelocityPeakFull',
     'displacementRMSFull', 'gpsSpeedFull', 'gyroscopeRMSFull', 'microphonoeRMSFull',
     'temperatureMeanFull', 'pressureMeanFull'])
+
+def sample_spacing(
+        df: pd.DataFrame, convert: typing.Literal[None, "to_seconds"] = "to_seconds"
+):
+    """
+    REMOVE THIS FUNCTION WHEN IT GETS MERGED INTO ENDAQ.CALC
+
+    Calculate the average spacing between individual samples.
+    For time indices, this calculates the sampling period `dt`.
+    :param df: the input data
+    :param convert: if `"to_seconds"` (default), convert any time objects into
+        floating-point seconds
+    """
+    dt = (df.index[-1] - df.index[0]) / (len(df.index) - 1)
+    if convert == "to_seconds" and isinstance(dt, (np.timedelta64, pd.Timedelta)):
+        dt = dt / np.timedelta64(1, "s")
+
+    return dt
 
 
 def multi_file_plot_attributes(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY, recording_colors=None,
@@ -239,7 +262,7 @@ def octave_spectrogram(df, window, bins_per_octave=3, freq_start=20, max_freq=fl
     """
     Produces an octave spectrogram of the given data.
 
-    :param df: The dataframe of sensor data
+    :param df: The dataframe of sensor data.  This must only have 1 column.
     :param window: The time window for each of the columns in the spectrogram
     :param bins_per_octave: The number of frequency bins per octave
     :param freq_start: The center of the first frequency bin
@@ -252,9 +275,12 @@ def octave_spectrogram(df, window, bins_per_octave=3, freq_start=20, max_freq=fl
      - the spectrogram data
      - the corresponding plotly figure
     """
+    if len(df) != 1:
+        raise ValueError("The parameter 'df' must have only one column of data!")
+
     ary = df.values.squeeze()
 
-    fs = (len(df) - 1) / (df.index[-1] - df.index[0])
+    fs = 1/sample_spacing(df)#(len(df) - 1) / (df.index[-1] - df.index[0])
     N = int(fs * window) #Number of points in the fft
     w = signal.blackman(N, False)
     
@@ -331,3 +357,86 @@ def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_s
     return fig
 
 
+def rolling_min_max_envelope(df: pd.DataFrame, desired_num_points: int = 250, plot_as_bars: bool = False,
+                             plot_title: str = "", opacity: float = 1,
+                             colors_to_use: Optional[collections.Container] = None
+                             ) -> go.Figure:
+    """
+    A function to create a Plotly Figure to plot the data for each of the available data sub-channels, designed to
+    reduce the number of points/data being plotted without minimizing the insight available from the plots.  It will
+    plot either an envelope for rolling windows of the data (plotting the max and the min as line plots), or a bar based
+    plot where the top of the bar (rectangle) is the highest value in the time window that bar spans, and the bottom of
+    the bar is the lowest point in that time window (choosing between them is done with the `plot_as_bars` parameter).
+
+    :param df: The dataframe of sub-channel data indexed by time stamps
+    :param desired_num_points: The desired number of points to be plotted for each subchannel.  The number of points
+     will be reduced from it's original sampling rate by applying metrics (e.g. min, max) over sliding windows
+     and then using that information to represent/visualize the data contained within the original data.  If less than
+     the desired number of points are present, then a sliding window will NOT be used, and instead the points will be
+     plotted as they were originally recorded  (also the subchannel will NOT be plotted as a bar based plot even if
+     `plot_as_bars` was set to true).
+    :param plot_as_bars: A boolean value indicating if the data should be visualized as a set of rectangles, where a
+     shaded rectangle is used to represent the maximum and minimum values of the data during the time window
+     covered by the rectangle.  These maximum and minimum values are visualized by the locations of the top and bottom
+     edges of the rectangle respectively, unless the height of the rectangle would be 0, in which case a line segment
+     will be displayed in it's place.  If this parameter is `False`, two lines will be plotted for each
+     of the sub-channels in the figure being created, creating an 'envelope' around the data.  An 'envelope' around the
+     data consists of a line plotted for the maximum values contained in each of the time windows, and another line
+     plotted for the minimum values.  Together these lines create a boundary which contains all the data points
+     recorded in the originally recorded data.
+    :param plot_title: The title for the plot
+    :param opacity: The opacity to use for plotting bars/lines
+    :param colors_to_use: An 'array-like' object of strings containing colors to be cycled through for the sub-channels.
+     If None is given (which is the default), then the `colorway` variable in Plotly's current theme/template will
+     be used to color the data on each of the sub-channels uniquely, repeating from the start of the `colorway` if
+     all colors have been used.
+    :return: The Plotly Figure with the data plotted
+    """
+
+    return rolling_enveloped_dashboard(
+        {plot_title: df},
+        desired_num_points=desired_num_points,
+        subplot_colors=colors_to_use,
+        plot_as_bars=plot_as_bars,
+        plot_full_single_channel=True,
+        opacity=opacity
+    )
+
+
+def around_peak(df: pd.DataFrame, num: int = 1000, leading_ratio: float = 0.5):
+    """
+    A function to plot the data surrounding the largest peak (or valley) in the given data.
+    The 'peak' is defined by the point in the absolute value of the given data with the largest value.
+
+    :param df: A dataframe indexed by time stamps
+    :param num: The number of points to plot
+    :param leading_ratio: The ratio of the data to be viewed that will come before the peak
+    :return: A Plotly figure containing the plot
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"The `df` parmeter must be of type `pd.DataFrame` but was given type {type(df)} instead.")
+
+    if not isinstance(num, int):
+        raise TypeError(f"The `num` parameter must be an `int` type, but was given {type(num)}.")
+
+    if not isinstance(leading_ratio, float):
+        raise TypeError(f"The `leading_ratio` parameter must be a `float` type, but was given {type(leading_ratio)}.")
+
+    if len(df) == 0:
+        raise ValueError(f"The parameter `df` must have nonzero length, but has shape {df.shape} instead")
+
+    if num < 3:
+        raise ValueError(f"The `num` parameter must be at least 3, but {num} was given.")
+
+    if leading_ratio < 0 or leading_ratio > 1:
+        raise ValueError("The `leading_ratio` parameter must be a float value in the "
+                         f"range [0,1], but was given {leading_ratio} instead.")
+
+    max_i = df.abs().max(axis=1).reset_index(drop=True).idxmax()
+
+    # These can go below and above the number of valid indices, but that can be ignored since
+    # they'll only be used to slice the data in a way that is okay to go over/under
+    window_start = max_i - int(num * leading_ratio)
+    window_end = max_i + int(num * (1-leading_ratio))
+
+    return px.line(df.iloc[window_start: window_end])
