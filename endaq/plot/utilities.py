@@ -144,7 +144,9 @@ def get_center_of_coordinates(lats: np.ndarray, lons: np.ndarray, as_list: bool 
      dictionary of format {"lon": lon_center, "lat": lat_center}
     :param as_degrees: A boolean value representing if the 'lats' and 'lons' parameters are given in degrees (as opposed
      to radians).  These units will be used for the returned values as well.  
-    :return:
+    :return: The latitude and longitude values as either a dictionary or a list, which is
+     determined by the value of the `as_list` parameter (see the `as_list` docstring for details
+     on the formatting of this return value
     """
     # Convert coordinates to radians if given in degrees
     if as_degrees:
