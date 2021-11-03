@@ -22,6 +22,8 @@ __all__ = [
     'gen_map',
     'octave_spectrogram',
     'octave_psd_bar_plot',
+    'rolling_min_max_envelope',
+    'around_peak',
 ]
 
 DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
