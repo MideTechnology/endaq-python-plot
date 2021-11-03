@@ -31,7 +31,7 @@ def rolling_enveloped_dashboard(
      plotted as they were originally recorded  (also the subplot will NOT be plotted as a bar based plot even if
      `plot_as_bars` was set to true).
     :param num_rows: The number of columns of subplots to be created inside the Plotly figure. If None is given, (then
-    `num_cols` must not be None), then this number will automatically be determined by what's needed.  If more rows
+     `num_cols` must not be None), then this number will automatically be determined by what's needed.  If more rows
      are specified than are needed, the number of rows will be reduced to the minimum needed to contain all the subplots
     :param num_cols: The number of columns of subplots to be created inside the Plotly figure.  See the description of
      the `num_rows` parameter for more details on this parameter, and how the two interact.  This also follows the same
@@ -298,9 +298,9 @@ def rolling_metric_dashboard(channel_df_dict: dict, desired_num_points: int = 25
      plotted as they were originally recorded  (also the subplot will NOT be plotted as a bar based plot even if
      `plot_as_bars` was set to true).
     :param num_rows: The number of columns of subplots to be created inside the Plotly figure. If None is given, (then
-    `num_cols` must not be None), then this number will automatically be determined by what's needed.  If more rows
+     `num_cols` must not be None), then this number will automatically be determined by what's needed.  If more rows
      are specified than are needed, the number of rows will be reduced to the minimum needed to contain all the subplots
-    :param num_cols:The number of columns of subplots to be created inside the Plotly figure.  See the description of
+    :param num_cols: The number of columns of subplots to be created inside the Plotly figure.  See the description of
      the `num_rows` parameter for more details on this parameter, and how the two interact.  This also follows the same
      approach to handling None when given
     :param rolling_metrics_to_plot: A tuple of strings which indicate what rolling metrics to plot for each subchannel.
