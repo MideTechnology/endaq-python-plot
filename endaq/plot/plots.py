@@ -181,7 +181,7 @@ def get_pure_numpy_2d_pca(df: pd.DataFrame, recording_colors: Optional[Container
     :param recording_colors: See the same parameter in the general_get_correlation_figure function
     :return: A plotly figure as described in the main function description
 
-    TODO:
+    .. todo::
      - Add type checking statements to ensure the given dataframe contains enough values of the desired type
      - Add type checking statements to ensure the recording_colors given (if not None) are the proper length
     """

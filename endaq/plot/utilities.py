@@ -209,7 +209,7 @@ def determine_plotly_map_zoom(
     :param margin: The desired margin around the plotted points (where 1 would be no-margin)
     :return: The zoom scaling for the Plotly map
     
-    NOTES:
+    .. note::
       This implementation could be potentially problematic.  By simply averaging min/max coorindates
       you end up with situations such as the longitude lines -179.99 and 179.99 being
       almost right next to each other, but their center is calculated at 0, the other side of the earth.
