@@ -8,7 +8,7 @@ INSTALL_REQUIRES = [
     "pandas>=1.1.5",
     "plotly>=5.3.1",
     "scipy>=1.7.1",
-    "endaq-calc>=1.0.0b1",
+    "endaq-calc>=1.1.0",
     ]
 
 TEST_REQUIRES = [

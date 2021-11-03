@@ -6,37 +6,30 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy import signal
-import typing
 from typing import Optional
 import collections
 
-from endaq.calc.psd import to_octave, welch  # ,sample_spacing  THIS ISN'T YET IN MASTER
+from endaq.calc import sample_spacing
+from endaq.calc.psd import to_octave, welch
 
 from .utilities import determine_plotly_map_zoom, get_center_of_coordinates
 from .dashboards import rolling_enveloped_dashboard
+
+__all__ = [
+    'multi_file_plot_attributes',
+    'general_get_correlation_figure',
+    'get_pure_numpy_2d_pca',
+    'gen_map',
+    'octave_spectrogram',
+    'octave_psd_bar_plot',
+    'rolling_min_max_envelope',
+    'around_peak',
+]
 
 DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'accelerationPeakFull', 'accelerationRMSFull', 'velocityRMSFull', 'psuedoVelocityPeakFull',
     'displacementRMSFull', 'gpsSpeedFull', 'gyroscopeRMSFull', 'microphonoeRMSFull',
     'temperatureMeanFull', 'pressureMeanFull'])
-
-def sample_spacing(
-        df: pd.DataFrame, convert: typing.Literal[None, "to_seconds"] = "to_seconds"
-):
-    """
-    REMOVE THIS FUNCTION WHEN IT GETS MERGED INTO ENDAQ.CALC
-
-    Calculate the average spacing between individual samples.
-    For time indices, this calculates the sampling period `dt`.
-    :param df: the input data
-    :param convert: if `"to_seconds"` (default), convert any time objects into
-        floating-point seconds
-    """
-    dt = (df.index[-1] - df.index[0]) / (len(df.index) - 1)
-    if convert == "to_seconds" and isinstance(dt, (np.timedelta64, pd.Timedelta)):
-        dt = dt / np.timedelta64(1, "s")
-
-    return dt
 
 
 def multi_file_plot_attributes(multi_file_db: pd.DataFrame,
@@ -282,7 +275,7 @@ def octave_spectrogram(df: pd.DataFrame, window: float, bins_per_octave: int = 3
      - the spectrogram data
      - the corresponding plotly figure
     """
-    if len(df) != 1:
+    if len(df.columns) != 1:
         raise ValueError("The parameter 'df' must have only one column of data!")
 
     ary = df.values.squeeze()
