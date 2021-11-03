@@ -1,14 +1,30 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy import signal
+from typing import Optional
+from collections import Container
 
+from endaq.calc import sample_spacing
 from endaq.calc.psd import to_octave, welch
 
 from .utilities import determine_plotly_map_zoom, get_center_of_coordinates
+from .dashboards import rolling_enveloped_dashboard
 
+__all__ = [
+    'multi_file_plot_attributes',
+    'general_get_correlation_figure',
+    'get_pure_numpy_2d_pca',
+    'gen_map',
+    'octave_spectrogram',
+    'octave_psd_bar_plot',
+    'rolling_min_max_envelope',
+    'around_peak',
+]
 
 DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'accelerationPeakFull', 'accelerationRMSFull', 'velocityRMSFull', 'psuedoVelocityPeakFull',
@@ -16,8 +32,10 @@ DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'temperatureMeanFull', 'pressureMeanFull'])
 
 
-def multi_file_plot_attributes(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY, recording_colors=None,
-                        width_per_subplot=400):
+def multi_file_plot_attributes(multi_file_db: pd.DataFrame,
+                               rows_to_plot: np.ndarray = DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY,
+                               recording_colors: Optional[Container] = None,
+                               width_per_subplot: int = 400) -> go.Figure:
     """
     Creates a Plotly figure plotting all the desired attributes from the given DataFrame.
 
@@ -61,8 +79,10 @@ def multi_file_plot_attributes(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO
     return fig.update_layout(width=len(rows_to_plot)*width_per_subplot, showlegend=False)
 
 
-def general_get_correlation_figure(merged_df, recording_colors=None, hover_names=None,
-                                   characteristics_to_show_on_hover=[], starting_cols=None):
+def general_get_correlation_figure(merged_df: pd.DataFrame, recording_colors: Optional[Container] = None,
+                                   hover_names: Optional[Container] = None,
+                                   characteristics_to_show_on_hover: list = [],
+                                   starting_cols: Container = None) -> go.Figure:
     """
     A function to create a plot with two drop-down menus, each populated with a set of options corresponding to the
     scalar quantities contained in the given dataframe.   The data points will then be plotted with the X and Y axis
@@ -152,7 +172,7 @@ def general_get_correlation_figure(merged_df, recording_colors=None, hover_names
     return fig
 
 
-def get_pure_numpy_2d_pca(df, recording_colors=None):
+def get_pure_numpy_2d_pca(df: pd.DataFrame, recording_colors: Optional[Container] = None) -> go.Figure:
     """
     Get a Plotly figure of the 2d PCA for the given DataFrame.   This will have dropdown menus to select
     which components are being used for the X and Y axis.
@@ -161,7 +181,7 @@ def get_pure_numpy_2d_pca(df, recording_colors=None):
     :param recording_colors: See the same parameter in the general_get_correlation_figure function
     :return: A plotly figure as described in the main function description
 
-    TODO:
+    .. todo::
      - Add type checking statements to ensure the given dataframe contains enough values of the desired type
      - Add type checking statements to ensure the recording_colors given (if not None) are the proper length
     """
@@ -201,7 +221,8 @@ def get_pure_numpy_2d_pca(df, recording_colors=None):
     return fig
 
 
-def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=True, color_by_column="GNSS Speed: Ground Speed"):
+def gen_map(df_map: pd.DataFrame, mapbox_access_token: str, filter_points_by_positive_groud_speed: bool = True,
+            color_by_column: str = "GNSS Speed: Ground Speed") -> go.Figure:
     """
     Plots GPS data on a map from a single recording, shading the points based some characteristic
     (defaults to ground speed).
@@ -235,11 +256,13 @@ def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=T
     return fig
     
 
-def octave_spectrogram(df, window, bins_per_octave=3, freq_start=20, max_freq=float('inf'), db_scale=True, log_scale_y_axis=True):
+def octave_spectrogram(df: pd.DataFrame, window: float, bins_per_octave: int = 3, freq_start: float = 20.0,
+                       max_freq: float = float('inf'), db_scale: bool = True, log_scale_y_axis: bool = True
+                       ) -> go.Figure:
     """
     Produces an octave spectrogram of the given data.
 
-    :param df: The dataframe of sensor data
+    :param df: The dataframe of sensor data.  This must only have 1 column.
     :param window: The time window for each of the columns in the spectrogram
     :param bins_per_octave: The number of frequency bins per octave
     :param freq_start: The center of the first frequency bin
@@ -252,9 +275,12 @@ def octave_spectrogram(df, window, bins_per_octave=3, freq_start=20, max_freq=fl
      - the spectrogram data
      - the corresponding plotly figure
     """
+    if len(df.columns) != 1:
+        raise ValueError("The parameter 'df' must have only one column of data!")
+
     ary = df.values.squeeze()
 
-    fs = (len(df) - 1) / (df.index[-1] - df.index[0])
+    fs = 1/sample_spacing(df)#(len(df) - 1) / (df.index[-1] - df.index[0])
     N = int(fs * window) #Number of points in the fft
     w = signal.blackman(N, False)
     
@@ -292,7 +318,8 @@ def octave_spectrogram(df, window, bins_per_octave=3, freq_start=20, max_freq=fl
     return freqs, bins, Pxx, fig
     
 
-def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_scale_y_axis=True):
+def octave_psd_bar_plot(df: pd.DataFrame, bins_per_octave: int = 3, f_start: float = 20.0, yaxis_title: str = '',
+                        log_scale_y_axis: bool = True) -> go.Figure:
     """
     Produces a bar plot of an octave psd.
 
@@ -331,3 +358,85 @@ def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_s
     return fig
 
 
+def rolling_min_max_envelope(df: pd.DataFrame, desired_num_points: int = 250, plot_as_bars: bool = False,
+                             plot_title: str = "", opacity: float = 1,
+                             colors_to_use: Optional[Container] = None) -> go.Figure:
+    """
+    A function to create a Plotly Figure to plot the data for each of the available data sub-channels, designed to
+    reduce the number of points/data being plotted without minimizing the insight available from the plots.  It will
+    plot either an envelope for rolling windows of the data (plotting the max and the min as line plots), or a bar based
+    plot where the top of the bar (rectangle) is the highest value in the time window that bar spans, and the bottom of
+    the bar is the lowest point in that time window (choosing between them is done with the `plot_as_bars` parameter).
+
+    :param df: The dataframe of sub-channel data indexed by time stamps
+    :param desired_num_points: The desired number of points to be plotted for each subchannel.  The number of points
+     will be reduced from it's original sampling rate by applying metrics (e.g. min, max) over sliding windows
+     and then using that information to represent/visualize the data contained within the original data.  If less than
+     the desired number of points are present, then a sliding window will NOT be used, and instead the points will be
+     plotted as they were originally recorded  (also the subchannel will NOT be plotted as a bar based plot even if
+     `plot_as_bars` was set to true).
+    :param plot_as_bars: A boolean value indicating if the data should be visualized as a set of rectangles, where a
+     shaded rectangle is used to represent the maximum and minimum values of the data during the time window
+     covered by the rectangle.  These maximum and minimum values are visualized by the locations of the top and bottom
+     edges of the rectangle respectively, unless the height of the rectangle would be 0, in which case a line segment
+     will be displayed in it's place.  If this parameter is `False`, two lines will be plotted for each
+     of the sub-channels in the figure being created, creating an 'envelope' around the data.  An 'envelope' around the
+     data consists of a line plotted for the maximum values contained in each of the time windows, and another line
+     plotted for the minimum values.  Together these lines create a boundary which contains all the data points
+     recorded in the originally recorded data.
+    :param plot_title: The title for the plot
+    :param opacity: The opacity to use for plotting bars/lines
+    :param colors_to_use: An 'array-like' object of strings containing colors to be cycled through for the sub-channels.
+     If None is given (which is the default), then the `colorway` variable in Plotly's current theme/template will
+     be used to color the data on each of the sub-channels uniquely, repeating from the start of the `colorway` if
+     all colors have been used.
+    :return: The Plotly Figure with the data plotted
+    """
+
+    return rolling_enveloped_dashboard(
+        {plot_title: df},
+        desired_num_points=desired_num_points,
+        subplot_colors=colors_to_use,
+        plot_as_bars=plot_as_bars,
+        plot_full_single_channel=True,
+        opacity=opacity
+    )
+
+
+def around_peak(df: pd.DataFrame, num: int = 1000, leading_ratio: float = 0.5):
+    """
+    A function to plot the data surrounding the largest peak (or valley) in the given data.
+    The 'peak' is defined by the point in the absolute value of the given data with the largest value.
+
+    :param df: A dataframe indexed by time stamps
+    :param num: The number of points to plot
+    :param leading_ratio: The ratio of the data to be viewed that will come before the peak
+    :return: A Plotly figure containing the plot
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"The `df` parmeter must be of type `pd.DataFrame` but was given type {type(df)} instead.")
+
+    if not isinstance(num, int):
+        raise TypeError(f"The `num` parameter must be an `int` type, but was given {type(num)}.")
+
+    if not isinstance(leading_ratio, float):
+        raise TypeError(f"The `leading_ratio` parameter must be a `float` type, but was given {type(leading_ratio)}.")
+
+    if len(df) == 0:
+        raise ValueError(f"The parameter `df` must have nonzero length, but has shape {df.shape} instead")
+
+    if num < 3:
+        raise ValueError(f"The `num` parameter must be at least 3, but {num} was given.")
+
+    if leading_ratio < 0 or leading_ratio > 1:
+        raise ValueError("The `leading_ratio` parameter must be a float value in the "
+                         f"range [0,1], but was given {leading_ratio} instead.")
+
+    max_i = df.abs().max(axis=1).reset_index(drop=True).idxmax()
+
+    # These can go below and above the number of valid indices, but that can be ignored since
+    # they'll only be used to slice the data in a way that is okay to go over/under
+    window_start = max_i - int(num * leading_ratio)
+    window_end = max_i + int(num * (1-leading_ratio))
+
+    return px.line(df.iloc[window_start: window_end])

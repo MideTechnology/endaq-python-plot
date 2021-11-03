@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import plotly.io as pio
+import plotly.graph_objects as go
 import numpy as np
+from typing import Union
 
 
-def define_theme(template_name="endaq_cloud",
-                 default_plotly_template='plotly_dark',
-                 text_color='#DAD9D8', font_family="Open Sans", title_font_family="Open Sans SemiBold",
-                 graph_line_color='#DAD9D8', grid_line_color="#404041", background_color='#262626',
-                 plot_background_color='#0F0F0F'):
+def define_theme(template_name: str = "endaq_cloud", default_plotly_template: str = 'plotly_dark',
+                 text_color: str = '#DAD9D8', font_family: str = "Open Sans",
+                 title_font_family: str = "Open Sans SemiBold", graph_line_color: str = '#DAD9D8',
+                 grid_line_color: str = "#404041", background_color: str = '#262626',
+                 plot_background_color: str = '#0F0F0F') -> go.layout._template.Template:
     """
     Define a Plotly theme (template), allowing completely custom aesthetics
 
@@ -94,7 +98,7 @@ def define_theme(template_name="endaq_cloud",
     return pio.templates[template_name]
 
 
-def set_theme(theme='endaq'):
+def set_theme(theme: str = 'endaq') -> go.layout._template.Template:
     """
     Sets the plot appearances based on a known 'theme'.
 
@@ -129,7 +133,8 @@ def set_theme(theme='endaq'):
     return pio.templates[theme]
 
 
-def get_center_of_coordinates(lats, lons, as_list=False, as_degrees=True):
+def get_center_of_coordinates(lats: np.ndarray, lons: np.ndarray, as_list: bool = False, as_degrees: bool = True
+                              ) -> Union[list, dict]:
     """
     Inputs and outputs are measured in degrees.
     
@@ -139,7 +144,9 @@ def get_center_of_coordinates(lats, lons, as_list=False, as_degrees=True):
      dictionary of format {"lon": lon_center, "lat": lat_center}
     :param as_degrees: A boolean value representing if the 'lats' and 'lons' parameters are given in degrees (as opposed
      to radians).  These units will be used for the returned values as well.  
-    :return:
+    :return: The latitude and longitude values as either a dictionary or a list, which is
+     determined by the value of the `as_list` parameter (see the `as_list` docstring for details
+     on the formatting of this return value
     """
     # Convert coordinates to radians if given in degrees
     if as_degrees:
@@ -184,7 +191,6 @@ def determine_plotly_map_zoom(
         margin: float = 1.2,
 ) -> float:
     """
-    
     Originally based on the following post:
     https://stackoverflow.com/questions/63787612/plotly-automatic-zooming-for-mapbox-maps
     Finds optimal zoom for a plotly mapbox.
@@ -201,12 +207,12 @@ def determine_plotly_map_zoom(
     :param width_to_height: float, expected ratio of final graph's with to height,
         used to select the constrained axis.
     :param margin: The desired margin around the plotted points (where 1 would be no-margin)
-    :return: 
+    :return: The zoom scaling for the Plotly map
     
-    NOTES:
-     - This could be potentially problematic.  By simply averaging min/max coorindates
+    .. note::
+      This implementation could be potentially problematic.  By simply averaging min/max coorindates
       you end up with situations such as the longitude lines -179.99 and 179.99 being
-      almost right next to each other, but their center is calculated at 0, the other side of the earth. 
+      almost right next to each other, but their center is calculated at 0, the other side of the earth.
     """
     if lons is None and lats is None:
         if isinstance(lonlats, tuple):

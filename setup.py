@@ -8,7 +8,7 @@ INSTALL_REQUIRES = [
     "pandas>=1.1.5",
     "plotly>=5.3.1",
     "scipy>=1.7.1",
-    "endaq-calc>=1.0.0b1",
+    "endaq-calc>=1.1.0",
     ]
 
 TEST_REQUIRES = [
@@ -19,7 +19,7 @@ EXAMPLE_REQUIRES = [
 
 setuptools.setup(
         name='endaq-plot',
-        version='1.0.0',
+        version='1.1.0',
         author='Mide Technology',
         author_email='help@mide.com',
         description='A comprehensive, user-centric Python API for working with enDAQ data and devices',
