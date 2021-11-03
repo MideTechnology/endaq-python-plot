@@ -189,7 +189,6 @@ def determine_plotly_map_zoom(
         margin: float = 1.2,
 ) -> float:
     """
-    
     Originally based on the following post:
     https://stackoverflow.com/questions/63787612/plotly-automatic-zooming-for-mapbox-maps
     Finds optimal zoom for a plotly mapbox.
@@ -206,12 +205,12 @@ def determine_plotly_map_zoom(
     :param width_to_height: float, expected ratio of final graph's with to height,
         used to select the constrained axis.
     :param margin: The desired margin around the plotted points (where 1 would be no-margin)
-    :return: 
+    :return: The zoom scaling for the Plotly map
     
     NOTES:
-     - This could be potentially problematic.  By simply averaging min/max coorindates
+     This implementation could be potentially problematic.  By simply averaging min/max coorindates
       you end up with situations such as the longitude lines -179.99 and 179.99 being
-      almost right next to each other, but their center is calculated at 0, the other side of the earth. 
+      almost right next to each other, but their center is calculated at 0, the other side of the earth.
     """
     if lons is None and lats is None:
         if isinstance(lonlats, tuple):
