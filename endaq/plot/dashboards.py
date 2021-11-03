@@ -31,7 +31,7 @@ def rolling_enveloped_dashboard(
      plotted as they were originally recorded  (also the subplot will NOT be plotted as a bar based plot even if
      `plot_as_bars` was set to true).
     :param num_rows: The number of columns of subplots to be created inside the Plotly figure. If None is given, (then
-    `num_cols` must not be None), then this number will automatically be determined by what's needed.  If more rows
+     `num_cols` must not be None), then this number will automatically be determined by what's needed.  If more rows
      are specified than are needed, the number of rows will be reduced to the minimum needed to contain all the subplots
     :param num_cols: The number of columns of subplots to be created inside the Plotly figure.  See the description of
      the `num_rows` parameter for more details on this parameter, and how the two interact.  This also follows the same
@@ -141,6 +141,24 @@ def rolling_enveloped_dashboard(
                 pd.isnull(min_max_tuple[0]),
                 pd.isnull(min_max_tuple[1])))
 
+        # If it's going to be plotted as bars, force it's time stamps to be uniformly spaced
+        # so that the bars don't have any discontinuities in the X-axis
+        if len(channel_data) >= desired_num_points and plot_as_bars:
+            if isinstance(channel_data.index, pd.core.indexes.datetimes.DatetimeIndex):
+                new_index = pd.date_range(
+                    channel_data.index.values[0],
+                    channel_data.index.values[-1],
+                    periods=len(channel_data),
+                )
+            else:
+                new_index = np.linspace(
+                    channel_data.index.values[0],
+                    channel_data.index.values[-1],
+                    num=len(channel_data),
+                )
+
+            channel_data.set_index(new_index)
+
         # Loop through each of the sub-channels, and their respective '0-height rectangle mask'
         for subchannel_name, cur_min_max_equal in min_max_equal[channel_data.columns].iteritems():
 
@@ -159,7 +177,7 @@ def rolling_enveloped_dashboard(
                         name=subchannel_name,
                         opacity=opacity,
                         line_color=cur_color,
-                        showlegend=False,
+                        showlegend=plot_full_single_channel,
                     )
                 )
             # If it's going to plot the data with bars
@@ -198,7 +216,7 @@ def rolling_enveloped_dashboard(
                             opacity=opacity,
                             mode='lines',
                             line_color=cur_color,
-                            showlegend=False,
+                            showlegend=plot_full_single_channel,
                         )
                     )
 
@@ -216,7 +234,7 @@ def rolling_enveloped_dashboard(
                         opacity=opacity,
                         marker_line_width=0,
                         base=min_max_tuple[0].loc[cur_subchannel_non_nan_mask, subchannel_name],
-                        showlegend=False,
+                        showlegend=plot_full_single_channel,
                         name=subchannel_name,
                     )
                 )
@@ -241,7 +259,7 @@ def rolling_enveloped_dashboard(
                             name=subchannel_name,
                             opacity=opacity,
                             line_color=cur_color,
-                            showlegend=False,
+                            showlegend=plot_full_single_channel,
                         )
                     )
 
@@ -280,9 +298,9 @@ def rolling_metric_dashboard(channel_df_dict: dict, desired_num_points: int = 25
      plotted as they were originally recorded  (also the subplot will NOT be plotted as a bar based plot even if
      `plot_as_bars` was set to true).
     :param num_rows: The number of columns of subplots to be created inside the Plotly figure. If None is given, (then
-    `num_cols` must not be None), then this number will automatically be determined by what's needed.  If more rows
+     `num_cols` must not be None), then this number will automatically be determined by what's needed.  If more rows
      are specified than are needed, the number of rows will be reduced to the minimum needed to contain all the subplots
-    :param num_cols:The number of columns of subplots to be created inside the Plotly figure.  See the description of
+    :param num_cols: The number of columns of subplots to be created inside the Plotly figure.  See the description of
      the `num_rows` parameter for more details on this parameter, and how the two interact.  This also follows the same
      approach to handling None when given
     :param rolling_metrics_to_plot: A tuple of strings which indicate what rolling metrics to plot for each subchannel.
@@ -381,6 +399,8 @@ def rolling_metric_dashboard(channel_df_dict: dict, desired_num_points: int = 25
 
 if __name__ == '__main__':
     import endaq.ide
+    from utilities import set_theme
+    set_theme()
 
     file_urls = ['https://info.endaq.com/hubfs/data/surgical-instrument.ide',
                  'https://info.endaq.com/hubfs/data/97c3990f-Drive-Home_70-1616632444.ide',
