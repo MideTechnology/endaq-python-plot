@@ -144,13 +144,20 @@ def rolling_enveloped_dashboard(
         # If it's going to be plotted as bars, force it's time stamps to be uniformly spaced
         # so that the bars don't have any discontinuities in the X-axis
         if len(channel_data) >= desired_num_points and plot_as_bars:
-            channel_data.set_index(
-                pd.interval_range(
+            if isinstance(channel_data.index, pd.core.indexes.datetimes.DatetimeIndex):
+                new_index = pd.date_range(
                     channel_data.index.values[0],
                     channel_data.index.values[-1],
                     periods=len(channel_data),
                 )
-            )
+            else:
+                new_index = np.linspace(
+                    channel_data.index.values[0],
+                    channel_data.index.values[-1],
+                    num=len(channel_data),
+                )
+
+            channel_data.set_index(new_index)
 
         # Loop through each of the sub-channels, and their respective '0-height rectangle mask'
         for subchannel_name, cur_min_max_equal in min_max_equal[channel_data.columns].iteritems():

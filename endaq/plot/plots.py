@@ -275,7 +275,7 @@ def octave_spectrogram(df, window, bins_per_octave=3, freq_start=20, max_freq=fl
      - the spectrogram data
      - the corresponding plotly figure
     """
-    if len(df) != 1:
+    if len(df.columns) < 1:
         raise ValueError("The parameter 'df' must have only one column of data!")
 
     ary = df.values.squeeze()
