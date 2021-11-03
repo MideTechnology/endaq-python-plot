@@ -12,8 +12,8 @@ import collections
 from endaq.calc import sample_spacing
 from endaq.calc.psd import to_octave, welch
 
-from utilities import determine_plotly_map_zoom, get_center_of_coordinates
-from dashboards import rolling_enveloped_dashboard
+from .utilities import determine_plotly_map_zoom, get_center_of_coordinates
+from .dashboards import rolling_enveloped_dashboard
 
 __all__ = [
     'multi_file_plot_attributes',
@@ -433,11 +433,3 @@ def around_peak(df: pd.DataFrame, num: int = 1000, leading_ratio: float = 0.5):
     window_end = max_i + int(num * (1-leading_ratio))
 
     return px.line(df.iloc[window_start: window_end])
-
-
-if __name__ == "__main__":
-    df_vibe = pd.read_csv('https://info.endaq.com/hubfs/data/motorcycle-vibration-moving-frequency.csv',index_col=0)
-    df_vibe = df_vibe - df_vibe.median()
-
-    freqs, bins, Pxx, fig = octave_spectrogram(df_vibe[['Z (40g)']], window=0.5, bins_per_octave=6)
-    fig.show()
