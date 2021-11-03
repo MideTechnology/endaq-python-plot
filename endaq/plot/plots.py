@@ -7,7 +7,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy import signal
 from typing import Optional
-import collections
+from collections import Container
 
 from endaq.calc import sample_spacing
 from endaq.calc.psd import to_octave, welch
@@ -34,7 +34,7 @@ DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
 
 def multi_file_plot_attributes(multi_file_db: pd.DataFrame,
                                rows_to_plot: np.ndarray = DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY,
-                               recording_colors: Optional[collections.Container] = None,
+                               recording_colors: Optional[Container] = None,
                                width_per_subplot: int = 400) -> go.Figure:
     """
     Creates a Plotly figure plotting all the desired attributes from the given DataFrame.
@@ -79,10 +79,10 @@ def multi_file_plot_attributes(multi_file_db: pd.DataFrame,
     return fig.update_layout(width=len(rows_to_plot)*width_per_subplot, showlegend=False)
 
 
-def general_get_correlation_figure(merged_df: pd.DataFrame, recording_colors: Optional[collections.Container] = None,
-                                   hover_names: Optional[collections.Container] = None,
+def general_get_correlation_figure(merged_df: pd.DataFrame, recording_colors: Optional[Container] = None,
+                                   hover_names: Optional[Container] = None,
                                    characteristics_to_show_on_hover: list = [],
-                                   starting_cols: collections.Container = None) -> go.Figure:
+                                   starting_cols: Container = None) -> go.Figure:
     """
     A function to create a plot with two drop-down menus, each populated with a set of options corresponding to the
     scalar quantities contained in the given dataframe.   The data points will then be plotted with the X and Y axis
@@ -172,7 +172,7 @@ def general_get_correlation_figure(merged_df: pd.DataFrame, recording_colors: Op
     return fig
 
 
-def get_pure_numpy_2d_pca(df: pd.DataFrame, recording_colors: Optional[collections.Container] = None) -> go.Figure:
+def get_pure_numpy_2d_pca(df: pd.DataFrame, recording_colors: Optional[Container] = None) -> go.Figure:
     """
     Get a Plotly figure of the 2d PCA for the given DataFrame.   This will have dropdown menus to select
     which components are being used for the X and Y axis.
@@ -360,7 +360,7 @@ def octave_psd_bar_plot(df: pd.DataFrame, bins_per_octave: int = 3, f_start: flo
 
 def rolling_min_max_envelope(df: pd.DataFrame, desired_num_points: int = 250, plot_as_bars: bool = False,
                              plot_title: str = "", opacity: float = 1,
-                             colors_to_use: Optional[collections.Container] = None) -> go.Figure:
+                             colors_to_use: Optional[Container] = None) -> go.Figure:
     """
     A function to create a Plotly Figure to plot the data for each of the available data sub-channels, designed to
     reduce the number of points/data being plotted without minimizing the insight available from the plots.  It will
