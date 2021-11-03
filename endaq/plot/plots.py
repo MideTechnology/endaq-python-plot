@@ -15,6 +15,17 @@ from endaq.calc.psd import to_octave, welch
 from utilities import determine_plotly_map_zoom, get_center_of_coordinates
 from dashboards import rolling_enveloped_dashboard
 
+__all__ = [
+    'multi_file_plot_attributes',
+    'general_get_correlation_figure',
+    'get_pure_numpy_2d_pca',
+    'gen_map',
+    'octave_spectrogram',
+    'octave_psd_bar_plot',
+    'rolling_min_max_envelope',
+    'around_peak',
+]
+
 DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'accelerationPeakFull', 'accelerationRMSFull', 'velocityRMSFull', 'psuedoVelocityPeakFull',
     'displacementRMSFull', 'gpsSpeedFull', 'gyroscopeRMSFull', 'microphonoeRMSFull',
