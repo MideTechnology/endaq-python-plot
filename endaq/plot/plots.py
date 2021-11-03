@@ -6,37 +6,19 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy import signal
-import typing
 from typing import Optional
 import collections
 
-from endaq.calc.psd import to_octave, welch  # ,sample_spacing  THIS ISN'T YET IN MASTER
+from endaq.calc import sample_spacing
+from endaq.calc.psd import to_octave, welch
 
-from .utilities import determine_plotly_map_zoom, get_center_of_coordinates
-from .dashboards import rolling_enveloped_dashboard
+from utilities import determine_plotly_map_zoom, get_center_of_coordinates
+from dashboards import rolling_enveloped_dashboard
 
 DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'accelerationPeakFull', 'accelerationRMSFull', 'velocityRMSFull', 'psuedoVelocityPeakFull',
     'displacementRMSFull', 'gpsSpeedFull', 'gyroscopeRMSFull', 'microphonoeRMSFull',
     'temperatureMeanFull', 'pressureMeanFull'])
-
-def sample_spacing(
-        df: pd.DataFrame, convert: typing.Literal[None, "to_seconds"] = "to_seconds"
-):
-    """
-    REMOVE THIS FUNCTION WHEN IT GETS MERGED INTO ENDAQ.CALC
-
-    Calculate the average spacing between individual samples.
-    For time indices, this calculates the sampling period `dt`.
-    :param df: the input data
-    :param convert: if `"to_seconds"` (default), convert any time objects into
-        floating-point seconds
-    """
-    dt = (df.index[-1] - df.index[0]) / (len(df.index) - 1)
-    if convert == "to_seconds" and isinstance(dt, (np.timedelta64, pd.Timedelta)):
-        dt = dt / np.timedelta64(1, "s")
-
-    return dt
 
 
 def multi_file_plot_attributes(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY, recording_colors=None,
@@ -440,3 +422,11 @@ def around_peak(df: pd.DataFrame, num: int = 1000, leading_ratio: float = 0.5):
     window_end = max_i + int(num * (1-leading_ratio))
 
     return px.line(df.iloc[window_start: window_end])
+
+
+if __name__ == "__main__":
+    df_vibe = pd.read_csv('https://info.endaq.com/hubfs/data/motorcycle-vibration-moving-frequency.csv',index_col=0)
+    df_vibe = df_vibe - df_vibe.median()
+
+    freqs, bins, Pxx, fig = octave_spectrogram(df_vibe[['Z (40g)']], window=0.5, bins_per_octave=6)
+    fig.show()

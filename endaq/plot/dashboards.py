@@ -177,7 +177,7 @@ def rolling_enveloped_dashboard(
                         name=subchannel_name,
                         opacity=opacity,
                         line_color=cur_color,
-                        showlegend=False,
+                        showlegend=plot_full_single_channel,
                     )
                 )
             # If it's going to plot the data with bars
@@ -216,7 +216,7 @@ def rolling_enveloped_dashboard(
                             opacity=opacity,
                             mode='lines',
                             line_color=cur_color,
-                            showlegend=False,
+                            showlegend=plot_full_single_channel,
                         )
                     )
 
@@ -234,7 +234,7 @@ def rolling_enveloped_dashboard(
                         opacity=opacity,
                         marker_line_width=0,
                         base=min_max_tuple[0].loc[cur_subchannel_non_nan_mask, subchannel_name],
-                        showlegend=False,
+                        showlegend=plot_full_single_channel,
                         name=subchannel_name,
                     )
                 )
@@ -259,7 +259,7 @@ def rolling_enveloped_dashboard(
                             name=subchannel_name,
                             opacity=opacity,
                             line_color=cur_color,
-                            showlegend=False,
+                            showlegend=plot_full_single_channel,
                         )
                     )
 
@@ -399,6 +399,8 @@ def rolling_metric_dashboard(channel_df_dict: dict, desired_num_points: int = 25
 
 if __name__ == '__main__':
     import endaq.ide
+    from utilities import set_theme
+    set_theme()
 
     file_urls = ['https://info.endaq.com/hubfs/data/surgical-instrument.ide',
                  'https://info.endaq.com/hubfs/data/97c3990f-Drive-Home_70-1616632444.ide',
