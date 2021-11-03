@@ -208,7 +208,7 @@ def determine_plotly_map_zoom(
     :return: The zoom scaling for the Plotly map
     
     NOTES:
-     This implementation could be potentially problematic.  By simply averaging min/max coorindates
+      This implementation could be potentially problematic.  By simply averaging min/max coorindates
       you end up with situations such as the longitude lines -179.99 and 179.99 being
       almost right next to each other, but their center is calculated at 0, the other side of the earth.
     """
