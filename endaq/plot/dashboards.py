@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import collections
+from collections import Container
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -12,7 +12,7 @@ from typing import Optional
 def rolling_enveloped_dashboard(
     channel_df_dict: dict, desired_num_points: int = 250, num_rows: Optional[int] = None,
     num_cols: Optional[int] = 3, width_for_subplot_row: int = 400, height_for_subplot_row: int = 400,
-    subplot_colors: Optional[collections.Container] = None, min_points_to_plot: int = 1, plot_as_bars: bool = False,
+    subplot_colors: Optional[Container] = None, min_points_to_plot: int = 1, plot_as_bars: bool = False,
     plot_full_single_channel: bool = False, opacity: float = 1, y_axis_bar_plot_padding: float = 0.06
 ) -> go.Figure:
     """
@@ -285,7 +285,7 @@ def rolling_enveloped_dashboard(
 
 def rolling_metric_dashboard(channel_df_dict: dict, desired_num_points: int = 250, num_rows: Optional[int] = None,
              num_cols: Optional[int] = 3, rolling_metrics_to_plot: tuple = ('mean', 'std'),
-             metric_colors: Optional[collections.Container] = None, width_for_subplot_row: int = 400,
+             metric_colors: Optional[Container] = None, width_for_subplot_row: int = 400,
              height_for_subplot_row: int = 400) -> go.Figure:
     """
     A function to create a dashboard of subplots of the given data, plotting a set of rolling metrics.
@@ -431,7 +431,7 @@ if __name__ == '__main__':
         # (IMPORTANT NOTE) The use of this as a dictionary is dependent on it maintaining being 'insertion ordered',
         # which is a thing in Python 3.7 (may have existed in a different way in python 3.6, but I'm not sure)
         CHANNEL_DFS = {
-            doc.channels[ch].name: endaq.ide.to_pandas(doc.channels[ch], time_mode='datetime') for ch in doc.channels}
+            doc.channels[ch].name: endaq.ide.to_pandas(doc.channels[ch], time_mode='seconds') for ch in doc.channels}
 
         SINGLE_CHANNEL = r'40g DC Acceleration'
         JUST_ACCEL_DFS = {SINGLE_CHANNEL: CHANNEL_DFS[SINGLE_CHANNEL]}

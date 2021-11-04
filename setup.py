@@ -19,7 +19,7 @@ EXAMPLE_REQUIRES = [
 
 setuptools.setup(
         name='endaq-plot',
-        version='1.0.0',
+        version='1.1.0',
         author='Mide Technology',
         author_email='help@mide.com',
         description='A comprehensive, user-centric Python API for working with enDAQ data and devices',

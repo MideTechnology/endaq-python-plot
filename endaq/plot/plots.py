@@ -7,7 +7,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy import signal
 from typing import Optional
-import collections
+from collections import Container
 
 from endaq.calc import sample_spacing
 from endaq.calc.psd import to_octave, welch
@@ -32,8 +32,10 @@ DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
     'temperatureMeanFull', 'pressureMeanFull'])
 
 
-def multi_file_plot_attributes(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY, recording_colors=None,
-                        width_per_subplot=400):
+def multi_file_plot_attributes(multi_file_db: pd.DataFrame,
+                               rows_to_plot: np.ndarray = DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY,
+                               recording_colors: Optional[Container] = None,
+                               width_per_subplot: int = 400) -> go.Figure:
     """
     Creates a Plotly figure plotting all the desired attributes from the given DataFrame.
 
@@ -77,8 +79,10 @@ def multi_file_plot_attributes(multi_file_db, rows_to_plot=DEFAULT_ATTRIBUTES_TO
     return fig.update_layout(width=len(rows_to_plot)*width_per_subplot, showlegend=False)
 
 
-def general_get_correlation_figure(merged_df, recording_colors=None, hover_names=None,
-                                   characteristics_to_show_on_hover=[], starting_cols=None):
+def general_get_correlation_figure(merged_df: pd.DataFrame, recording_colors: Optional[Container] = None,
+                                   hover_names: Optional[Container] = None,
+                                   characteristics_to_show_on_hover: list = [],
+                                   starting_cols: Container = None) -> go.Figure:
     """
     A function to create a plot with two drop-down menus, each populated with a set of options corresponding to the
     scalar quantities contained in the given dataframe.   The data points will then be plotted with the X and Y axis
@@ -168,7 +172,7 @@ def general_get_correlation_figure(merged_df, recording_colors=None, hover_names
     return fig
 
 
-def get_pure_numpy_2d_pca(df, recording_colors=None):
+def get_pure_numpy_2d_pca(df: pd.DataFrame, recording_colors: Optional[Container] = None) -> go.Figure:
     """
     Get a Plotly figure of the 2d PCA for the given DataFrame.   This will have dropdown menus to select
     which components are being used for the X and Y axis.
@@ -177,7 +181,7 @@ def get_pure_numpy_2d_pca(df, recording_colors=None):
     :param recording_colors: See the same parameter in the general_get_correlation_figure function
     :return: A plotly figure as described in the main function description
 
-    TODO:
+    .. todo::
      - Add type checking statements to ensure the given dataframe contains enough values of the desired type
      - Add type checking statements to ensure the recording_colors given (if not None) are the proper length
     """
@@ -217,7 +221,8 @@ def get_pure_numpy_2d_pca(df, recording_colors=None):
     return fig
 
 
-def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=True, color_by_column="GNSS Speed: Ground Speed"):
+def gen_map(df_map: pd.DataFrame, mapbox_access_token: str, filter_points_by_positive_groud_speed: bool = True,
+            color_by_column: str = "GNSS Speed: Ground Speed") -> go.Figure:
     """
     Plots GPS data on a map from a single recording, shading the points based some characteristic
     (defaults to ground speed).
@@ -251,7 +256,9 @@ def gen_map(df_map, mapbox_access_token, filter_points_by_positive_groud_speed=T
     return fig
     
 
-def octave_spectrogram(df, window, bins_per_octave=3, freq_start=20, max_freq=float('inf'), db_scale=True, log_scale_y_axis=True):
+def octave_spectrogram(df: pd.DataFrame, window: float, bins_per_octave: int = 3, freq_start: float = 20.0,
+                       max_freq: float = float('inf'), db_scale: bool = True, log_scale_y_axis: bool = True
+                       ) -> go.Figure:
     """
     Produces an octave spectrogram of the given data.
 
@@ -311,7 +318,8 @@ def octave_spectrogram(df, window, bins_per_octave=3, freq_start=20, max_freq=fl
     return freqs, bins, Pxx, fig
     
 
-def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_scale_y_axis=True):
+def octave_psd_bar_plot(df: pd.DataFrame, bins_per_octave: int = 3, f_start: float = 20.0, yaxis_title: str = '',
+                        log_scale_y_axis: bool = True) -> go.Figure:
     """
     Produces a bar plot of an octave psd.
 
@@ -352,8 +360,7 @@ def octave_psd_bar_plot(df, bins_per_octave=3, f_start=20, yaxis_title='', log_s
 
 def rolling_min_max_envelope(df: pd.DataFrame, desired_num_points: int = 250, plot_as_bars: bool = False,
                              plot_title: str = "", opacity: float = 1,
-                             colors_to_use: Optional[collections.Container] = None
-                             ) -> go.Figure:
+                             colors_to_use: Optional[Container] = None) -> go.Figure:
     """
     A function to create a Plotly Figure to plot the data for each of the available data sub-channels, designed to
     reduce the number of points/data being plotted without minimizing the insight available from the plots.  It will
