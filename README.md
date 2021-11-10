@@ -32,7 +32,7 @@ set_theme(theme='endaq')
 ### Creating Spectrograms With Octave Spaced Frequencies
 
 ```python
-freqs, bins, Pxx, fig = octave_spectrogram(df, window=.15)
+data_df, fig = octave_spectrogram(df, window=.15)
 fig.show()
 ```
 

@@ -87,16 +87,21 @@ def get_tsne_plot(df: pd.DataFrame, perplexity: int = 20, random_seed: int = 0, 
                   serials_to_indices: dict = None,
                   momentum: int = 0) -> go.Figure:
     """
-    Estimates a SNE model.
+    Estimates a SNE model, and plots the visualization of the given data.
+
+    More information about t-SNE visualizations and how to use them effectively can be found here:
+    https://distill.pub/2016/misread-tsne/
+
     (Implementation based around the following: https://nlml.github.io/in-raw-numpy/in-raw-numpy-t-sne/)
 
-    :param df:
-    :param perplexity:
+    :param df: A Pandas Dataframe of the the data to be visualized (e.g. a recording attribute DataFrame)
+    :param perplexity: A value which can be thought of as determining how many neighbors of a point
+     will be used to update its position in the visualization.
     :param random_seed: Integer value to set the seed value for the random
     :param num_iterations: The number of iterations to train for
-    :param learning_rate:
-    :param momentum:
-    :return: Plotly figure of the, low-dimensional representation of X.
+    :param learning_rate: The rate at which to update teh values in the model
+    :param momentum:  The momentum to be used when applying updates to the model
+    :return: Plotly figure of the, low-dimensional representation of the given data
     """
     rng = np.random.RandomState(random_seed)
 

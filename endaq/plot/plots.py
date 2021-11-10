@@ -322,7 +322,9 @@ def octave_spectrogram(df: pd.DataFrame, window: float, bins_per_octave: int = 3
 
     fig.update_traces(showscale=False)
 
-    return freqs, bins, Pxx, fig
+    data_df = pd.DataFrame(Pxx, index=freqs, columns=bins)
+
+    return data_df, fig
     
 
 def octave_psd_bar_plot(df: pd.DataFrame, bins_per_octave: int = 3, f_start: float = 20.0, yaxis_title: str = '',
