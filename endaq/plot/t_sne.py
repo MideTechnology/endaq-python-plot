@@ -160,6 +160,7 @@ def get_tsne_plot(df: pd.DataFrame, perplexity: int = 20, random_seed: int = 0, 
         xaxis_visible=False,
         yaxis_visible=False,
         showlegend=False,
+        margin=dict(t=0, b=0, l=0, r=0),
     )
 
     return fig
