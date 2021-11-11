@@ -33,53 +33,58 @@ DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY = np.array([
 
 
 def multi_file_plot_attributes(multi_file_db: pd.DataFrame,
-                               rows_to_plot: np.ndarray = DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY,
+                               attribs_to_plot: np.ndarray = DEFAULT_ATTRIBUTES_TO_PLOT_INDIVIDUALLY,
                                recording_colors: Optional[Container] = None,
                                width_per_subplot: int = 400) -> go.Figure:
     """
     Creates a Plotly figure plotting all the desired attributes from the given DataFrame.
 
     :param multi_file_db: The Pandas DataFrame of data to plot attributes from
-    :param rows_to_plot: A numpy ndarray of strings with the names of the attributes to plot
+    :param attribs_to_plot: A numpy ndarray of strings with the names of the attributes to plot
     :param recording_colors: The colors to make each of the points (All will be the same color if None is given)
     :param width_per_subplot: The width to make every subplot
     :return: A Plotly figure of all the subplots desired to be plotted
     """
-    if not isinstance(rows_to_plot, np.ndarray):
+    if not isinstance(attribs_to_plot, np.ndarray):
         raise TypeError(
-            "Instead of an ndarray given for 'rows_to_plot', a variable of type %s was given" % str(type(rows_to_plot)))
+            "Instead of an ndarray given for 'attribs_to_plot', a variable of type %s was given" % str(type(attribs_to_plot)))
 
-    if len(rows_to_plot) == 0:
-        raise ValueError("At least one value must be given for 'rows_to_plot'")
+    if len(attribs_to_plot) == 0:
+        raise ValueError("At least one value must be given for 'attribs_to_plot'")
 
-    if not all(isinstance(row, str) for row in rows_to_plot):
+    if not all(isinstance(row, str) for row in attribs_to_plot):
         raise TypeError("All rows to plot must be given as a string!")
 
-    should_plot_row = np.array([not multi_file_db[r].isnull().all() for r in rows_to_plot])
+    should_plot_row = np.array([not multi_file_db[r].isnull().all() for r in attribs_to_plot])
 
-    rows_to_plot = rows_to_plot[should_plot_row]
+    attribs_to_plot = attribs_to_plot[should_plot_row]
 
     fig = make_subplots(
         rows=1,
-        cols=len(rows_to_plot),
-        subplot_titles=rows_to_plot,
+        cols=len(attribs_to_plot),
+        subplot_titles=attribs_to_plot,
     )
 
-    for j, row_name in enumerate(rows_to_plot):
-        scatter_trace = go.Scatter(
-            x=multi_file_db['recording_ts'],
-            y=multi_file_db[row_name],
-            name=row_name,
-            mode='markers',
-            text=multi_file_db['serial_number_id'].values,
-            marker_color=recording_colors,
+    for j, row_name in enumerate(attribs_to_plot):
+        fig.add_trace(
+            go.Scatter(
+                x=multi_file_db['recording_ts'],
+                y=multi_file_db[row_name],
+                name=row_name,
+                mode='markers',
+                text=multi_file_db['serial_number_id'].values,
+                marker_color=recording_colors,
+            ),
+            row=1,
+            col=j + 1,
         )
-        fig.add_trace(scatter_trace, row=1, col=j + 1)
 
-    return fig.update_layout(width=len(rows_to_plot)*width_per_subplot, showlegend=False)
+    return fig.update_layout(width=len(attribs_to_plot)*width_per_subplot, showlegend=False)
 
 
-def general_get_correlation_figure(merged_df: pd.DataFrame, recording_colors: Optional[Container] = None,
+def general_get_correlation_figure(merged_df: pd.DataFrame,
+                                   color_col: str = 'serial_number_id',
+                                   color_discrete_map: Optional[dict] = None,
                                    hover_names: Optional[Container] = None,
                                    characteristics_to_show_on_hover: list = [],
                                    starting_cols: Container = None) -> go.Figure:
@@ -96,9 +101,6 @@ def general_get_correlation_figure(merged_df: pd.DataFrame, recording_colors: Op
      if None is given)
     :return: The interactive Plotly figure
     """
-    if recording_colors is None:
-        recording_colors = np.full(len(merged_df), 0)
-
     cols = [col for col, t in zip(merged_df.columns, merged_df.dtypes) if t != np.object]
 
     point_naming_characteristic = merged_df.index if hover_names is None else hover_names
@@ -121,7 +123,8 @@ def general_get_correlation_figure(merged_df: pd.DataFrame, recording_colors: Op
         merged_df,
         x=first_x_var,
         y=first_y_var,
-        color=recording_colors,
+        color=color_col,
+        color_discrete_map=color_discrete_map,
         hover_name=point_naming_characteristic,
         hover_data=characteristics_to_show_on_hover,
         # width=800,
@@ -172,7 +175,10 @@ def general_get_correlation_figure(merged_df: pd.DataFrame, recording_colors: Op
     return fig
 
 
-def get_pure_numpy_2d_pca(df: pd.DataFrame, recording_colors: Optional[Container] = None) -> go.Figure:
+def get_pure_numpy_2d_pca(df: pd.DataFrame,
+                          color_col: str = 'serial_number_id',
+                          color_discrete_map: Optional[dict] = None,
+                          ) -> go.Figure:
     """
     Get a Plotly figure of the 2d PCA for the given DataFrame.   This will have dropdown menus to select
     which components are being used for the X and Y axis.
@@ -213,7 +219,8 @@ def get_pure_numpy_2d_pca(df: pd.DataFrame, recording_colors: Optional[Container
     # with dropdown menus to allow selection of what PCA components are being analyzed
     fig = general_get_correlation_figure(
         pca_df,
-        recording_colors,
+        color_col=df[color_col],
+        color_discrete_map=color_discrete_map,
         characteristics_to_show_on_hover=[df.index],
         hover_names=df.index
     )
@@ -315,7 +322,9 @@ def octave_spectrogram(df: pd.DataFrame, window: float, bins_per_octave: int = 3
 
     fig.update_traces(showscale=False)
 
-    return freqs, bins, Pxx, fig
+    data_df = pd.DataFrame(Pxx, index=freqs, columns=bins)
+
+    return data_df, fig
     
 
 def octave_psd_bar_plot(df: pd.DataFrame, bins_per_octave: int = 3, f_start: float = 20.0, yaxis_title: str = '',
