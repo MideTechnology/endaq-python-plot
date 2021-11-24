@@ -1,3 +1,6 @@
+**NOTE This package is now part of the main endaq repo, and can be found at https://github.com/MideTechnology/endaq-python/tree/development/endaq/plot This repo is Archived**
+---
+
 # endaq-plot - Painless Plotting Of Sensor Data
 
 endaq-plot is a package comprising a collection of plotting utilities for sensor data analysis. It leverages Plotly in order to produce interactive plots, and makes creating powerful visualizations simple and easy for those new to Python.
